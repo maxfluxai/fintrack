@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0b0f17" />
+<title>FinTrack — Business + Crypto</title>
+<link rel="manifest" href="manifest.json">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0b0f17;
+    --panel: #121826;
+    --panel-2: #1a2236;
+    --border: #243049;
+    --text: #e6edf7;
+    --muted: #8a95ab;
+    --accent: #7c5cff;
+    --accent-2: #22d3ee;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #eab308;
+  }
+  * { -webkit-tap-highlight-color: transparent; }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+  }
+  .glass { background: var(--panel); border: 1px solid var(--border); }
+  .glass-2 { background: var(--panel-2); border: 1px solid var(--border); }
+  .pill { background: var(--panel-2); border: 1px solid var(--border); }
+  input, select, textarea { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .btn { background: var(--accent); color: white; transition: all .15s; }
+  .btn:hover { filter: brightness(1.1); }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-ghost:hover { background: var(--panel-2); }
+  .tab-active { background: var(--accent); color: white; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .spin { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .grow-in { animation: grow .25s ease; }
+  @keyframes grow { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .num { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+
+<!-- ============ SETUP MODAL ============ -->
+<div id="setupModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden">
+  <div class="glass rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+    <h2 class="text-xl font-bold mb-2">⚙️ Setup</h2>
+    <p class="text-sm text-[var(--muted)] mb-4">One-time config. All values stored locally on this device.</p>
+
+    <label class="text-xs text-[var(--muted)]">Google Apps Script Web App URL</label>
+    <input id="cfgSheetUrl" class="w-full rounded-lg p-2 mt-1 mb-3 text-sm" placeholder="https://script.google.com/macros/s/..../exec" />
+
+    <label class="text-xs text-[var(--muted)]">Solana Address (public)</label>
+    <input id="cfgWalletSol" class="w-full rounded-lg p-2 mt-1 mb-3 text-sm font-mono" placeholder="e.g. 5xy...abc" />
+
+    <label class="text-xs text-[var(--muted)]">Ethereum / Polygon / Base Address (same EVM address, public)</label>
+    <input id="cfgWalletEvm" class="w-full rounded-lg p-2 mt-1 mb-3 text-sm font-mono" placeholder="e.g. 0xabc...123" />
+
+    <label class="text-xs text-[var(--muted)]">Bitcoin Address (public)</label>
+    <input id="cfgWalletBtc" class="w-full rounded-lg p-2 mt-1 mb-3 text-sm font-mono" placeholder="e.g. bc1q... or 3... or 1..." />
+
+    <label class="text-xs text-[var(--muted)]">Business Name (optional)</label>
+    <input id="cfgName" class="w-full rounded-lg p-2 mt-1 mb-4 text-sm" placeholder="My Business" />
+
+    <div class="flex gap-2">
+      <button id="saveCfg" class="btn rounded-lg px-4 py-2 text-sm font-semibold flex-1">Save & Reload</button>
+      <button id="closeCfg" class="btn-ghost rounded-lg px-4 py-2 text-sm">Close</button>
+    </div>
+
+    <details class="mt-4 text-xs text-[var(--muted)]">
+      <summary class="cursor-pointer hover:text-white">📖 How to find your wallet addresses in Phantom</summary>
+      <ol class="list-decimal ml-5 mt-2 space-y-1 leading-relaxed">
+        <li>Open Phantom. Tap the <b>account name at the top</b>.</li>
+        <li>You'll see a list of networks: Solana, Ethereum, Polygon, Base, Bitcoin.</li>
+        <li>Tap each one → <b>"Copy address"</b>. Paste into the matching field above.</li>
+        <li>ETH, Polygon, and Base all share the <b>same 0x... address</b> — paste it once in the EVM field.</li>
+        <li>Only public addresses go here. <b>Never paste your seed phrase anywhere.</b></li>
+      </ol>
+    </details>
+    <details class="mt-2 text-xs text-[var(--muted)]">
+      <summary class="cursor-pointer hover:text-white">📖 How to get the Sheet URL</summary>
+      <ol class="list-decimal ml-5 mt-2 space-y-1 leading-relaxed">
+        <li>Follow the SETUP.md guide — it walks through every click.</li>
+      </ol>
+    </details>
+  </div>
+</div>
+
+<!-- ============ ADD TRANSACTION MODAL ============ -->
+<div id="txModal" class="fixed inset-0 bg-black/80 z-40 flex items-center justify-center p-4 hidden">
+  <div class="glass rounded-2xl p-6 max-w-md w-full">
+    <h2 class="text-xl font-bold mb-4" id="txModalTitle">Add Transaction</h2>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="col-span-2">
+        <label class="text-xs text-[var(--muted)]">Date</label>
+        <input id="txDate" type="date" class="w-full rounded-lg p-2 mt-1 text-sm" />
+      </div>
+      <div>
+        <label class="text-xs text-[var(--muted)]">Type</label>
+        <select id="txType" class="w-full rounded-lg p-2 mt-1 text-sm">
+          <option value="income">💰 Income</option>
+          <option value="expense">💸 Expense</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-[var(--muted)]">Currency</label>
+        <select id="txCurrency" class="w-full rounded-lg p-2 mt-1 text-sm">
+          <option value="INR">INR (₹)</option>
+          <option value="USD">USD ($)</option>
+        </select>
+      </div>
+      <div class="col-span-2">
+        <label class="text-xs text-[var(--muted)]">Category</label>
+        <input id="txCategory" list="catList" class="w-full rounded-lg p-2 mt-1 text-sm" placeholder="e.g. Sponsorship, Software, Equipment" />
+        <datalist id="catList">
+          <option value="Sponsorship">
+          <option value="Client Payment">
+          <option value="AI Tools / Software">
+          <option value="Equipment">
+          <option value="Rent">
+          <option value="Travel">
+          <option value="Food">
+          <option value="Marketing">
+          <option value="Utilities">
+          <option value="Personal">
+          <option value="Other">
+        </datalist>
+      </div>
+      <div class="col-span-2">
+        <label class="text-xs text-[var(--muted)]">Description</label>
+        <input id="txDesc" class="w-full rounded-lg p-2 mt-1 text-sm" placeholder="Flova.ai campaign Q1" />
+      </div>
+      <div class="col-span-2">
+        <label class="text-xs text-[var(--muted)]">Amount</label>
+        <input id="txAmount" type="number" step="0.01" class="w-full rounded-lg p-2 mt-1 text-sm num" placeholder="0.00" />
+      </div>
+    </div>
+    <div class="flex gap-2 mt-5">
+      <button id="saveTx" class="btn rounded-lg px-4 py-2 text-sm font-semibold flex-1">Save</button>
+      <button id="cancelTx" class="btn-ghost rounded-lg px-4 py-2 text-sm">Cancel</button>
+    </div>
+    <div id="txStatus" class="text-xs text-[var(--muted)] mt-3 text-center"></div>
+  </div>
+</div>
+
+<!-- ============ HEADER ============ -->
+<header class="sticky top-0 z-30 backdrop-blur-md bg-[var(--bg)]/80 border-b border-[var(--border)]">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-2">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--accent)] to-[var(--accent-2)] flex items-center justify-center font-bold">₹</div>
+      <div>
+        <div class="font-bold text-sm" id="hdrName">FinTrack</div>
+        <div class="text-[10px] text-[var(--muted)] num" id="hdrRate">loading rates…</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="pill rounded-full p-0.5 flex text-xs">
+        <button data-cur="INR" class="curBtn px-3 py-1 rounded-full tab-active">₹ INR</button>
+        <button data-cur="USD" class="curBtn px-3 py-1 rounded-full">$ USD</button>
+      </div>
+      <button id="refreshBtn" title="Refresh" class="btn-ghost rounded-full w-9 h-9 flex items-center justify-center text-sm">↻</button>
+      <button id="cfgBtn" title="Settings" class="btn-ghost rounded-full w-9 h-9 flex items-center justify-center text-sm">⚙</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="max-w-7xl mx-auto px-4 pb-3">
+    <div class="pill rounded-xl p-1 flex gap-1 text-xs overflow-x-auto">
+      <button data-tab="dash" class="tabBtn px-4 py-2 rounded-lg tab-active whitespace-nowrap">📊 Dashboard</button>
+      <button data-tab="tx" class="tabBtn px-4 py-2 rounded-lg whitespace-nowrap">📒 Transactions</button>
+      <button data-tab="crypto" class="tabBtn px-4 py-2 rounded-lg whitespace-nowrap">🪙 Crypto</button>
+      <button data-tab="monthly" class="tabBtn px-4 py-2 rounded-lg whitespace-nowrap">📅 Monthly</button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 py-5 pb-28">
+
+  <!-- ============ DASHBOARD ============ -->
+  <section id="tab-dash" class="tabPanel grow-in">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+      <div class="glass rounded-2xl p-4">
+        <div class="text-[11px] text-[var(--muted)] uppercase tracking-wide">Net Worth</div>
+        <div id="statNetWorth" class="text-xl md:text-2xl font-bold mt-1 num">—</div>
+        <div class="text-[11px] text-[var(--muted)] mt-1">Cash + Crypto</div>
+      </div>
+      <div class="glass rounded-2xl p-4">
+        <div class="text-[11px] text-[var(--muted)] uppercase tracking-wide">Cash Balance</div>
+        <div id="statCash" class="text-xl md:text-2xl font-bold mt-1 num">—</div>
+        <div class="text-[11px] text-[var(--muted)] mt-1" id="statCashSub">Income − Expense</div>
+      </div>
+      <div class="glass rounded-2xl p-4">
+        <div class="text-[11px] text-[var(--muted)] uppercase tracking-wide">Crypto Value</div>
+        <div id="statCrypto" class="text-xl md:text-2xl font-bold mt-1 num">—</div>
+        <div class="text-[11px] text-[var(--muted)] mt-1" id="statCryptoSub">Phantom wallet</div>
+      </div>
+      <div class="glass rounded-2xl p-4">
+        <div class="text-[11px] text-[var(--muted)] uppercase tracking-wide">This Month</div>
+        <div id="statMonth" class="text-xl md:text-2xl font-bold mt-1 num">—</div>
+        <div class="text-[11px] text-[var(--muted)] mt-1" id="statMonthSub">Net flow</div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4 mb-5">
+      <div class="glass rounded-2xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-sm">Monthly Cashflow</h3>
+          <span class="text-[11px] text-[var(--muted)]">Last 6 months</span>
+        </div>
+        <div class="h-56"><canvas id="chartCashflow"></canvas></div>
+      </div>
+      <div class="glass rounded-2xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-sm">Expense Categories</h3>
+          <span class="text-[11px] text-[var(--muted)]">All time</span>
+        </div>
+        <div class="h-56"><canvas id="chartCategories"></canvas></div>
+      </div>
+    </div>
+
+    <div class="glass rounded-2xl p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold text-sm">Recent Activity</h3>
+        <button data-tab="tx" class="tabBtn text-xs text-[var(--accent-2)]">See all →</button>
+      </div>
+      <div id="recentList" class="space-y-2 text-sm"></div>
+    </div>
+  </section>
+
+  <!-- ============ TRANSACTIONS ============ -->
+  <section id="tab-tx" class="tabPanel hidden">
+    <div class="flex items-center gap-2 mb-4 flex-wrap">
+      <input id="txSearch" placeholder="Search description or category…" class="rounded-lg p-2 text-sm flex-1 min-w-[200px]" />
+      <select id="txFilter" class="rounded-lg p-2 text-sm">
+        <option value="all">All types</option>
+        <option value="income">Income only</option>
+        <option value="expense">Expense only</option>
+      </select>
+      <button id="exportCsv" class="btn-ghost rounded-lg px-3 py-2 text-sm">⬇ CSV</button>
+    </div>
+    <div class="glass rounded-2xl overflow-hidden">
+      <div id="txListHead" class="hidden md:grid grid-cols-[110px_90px_1fr_140px_120px_40px] gap-3 px-4 py-2 text-[11px] uppercase tracking-wide text-[var(--muted)] border-b border-[var(--border)]">
+        <div>Date</div><div>Type</div><div>Description</div><div>Category</div><div class="text-right">Amount</div><div></div>
+      </div>
+      <div id="txList" class="divide-y divide-[var(--border)]"></div>
+    </div>
+  </section>
+
+  <!-- ============ CRYPTO ============ -->
+  <section id="tab-crypto" class="tabPanel hidden">
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
+      <div class="glass rounded-2xl p-4">
+        <div class="text-[11px] text-[var(--muted)] uppercase tracking-wide">Total Value</div>
+        <div id="cryptoTotal" class="text-xl md:text-2xl font-bold mt-1 num">—</div>
+      </div>
+      <div class="glass rounded-2xl p-4">
+        <div class="text-[11px] text-[var(--muted)] uppercase tracking-wide">Top Holding</div>
+        <div id="solBalance" class="text-xl md:text-2xl font-bold mt-1 num">—</div>
+      </div>
+      <div class="glass rounded-2xl p-4 col-span-2 md:col-span-1">
+        <div class="text-[11px] text-[var(--muted)] uppercase tracking-wide">Assets</div>
+        <div id="tokenCount" class="text-xl md:text-2xl font-bold mt-1 num">—</div>
+      </div>
+    </div>
+    <div class="glass rounded-2xl p-4 mb-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold text-sm">Portfolio Breakdown</h3>
+        <span class="text-[11px] text-[var(--muted)]" id="cryptoWallet">—</span>
+      </div>
+      <div class="h-56 mb-4"><canvas id="chartCrypto"></canvas></div>
+      <div id="cryptoHoldings" class="space-y-2"></div>
+    </div>
+  </section>
+
+  <!-- ============ MONTHLY ============ -->
+  <section id="tab-monthly" class="tabPanel hidden">
+    <div class="flex items-center gap-2 mb-4">
+      <select id="monthSelect" class="rounded-lg p-2 text-sm flex-1"></select>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+      <div class="glass rounded-2xl p-4">
+        <div class="text-[11px] text-[var(--muted)] uppercase">Income</div>
+        <div id="mIncome" class="text-lg md:text-xl font-bold mt-1 num text-[var(--green)]">—</div>
+      </div>
+      <div class="glass rounded-2xl p-4">
+        <div class="text-[11px] text-[var(--muted)] uppercase">Expense</div>
+        <div id="mExpense" class="text-lg md:text-xl font-bold mt-1 num text-[var(--red)]">—</div>
+      </div>
+      <div class="glass rounded-2xl p-4">
+        <div class="text-[11px] text-[var(--muted)] uppercase">Net</div>
+        <div id="mNet" class="text-lg md:text-xl font-bold mt-1 num">—</div>
+      </div>
+      <div class="glass rounded-2xl p-4">
+        <div class="text-[11px] text-[var(--muted)] uppercase">Savings Rate</div>
+        <div id="mSavings" class="text-lg md:text-xl font-bold mt-1 num">—</div>
+      </div>
+    </div>
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="glass rounded-2xl p-4">
+        <h3 class="font-semibold text-sm mb-3">Category Breakdown</h3>
+        <div id="mCategories" class="space-y-2"></div>
+      </div>
+      <div class="glass rounded-2xl p-4">
+        <h3 class="font-semibold text-sm mb-3">Daily Spend</h3>
+        <div class="h-56"><canvas id="chartDaily"></canvas></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- FAB -->
+<button id="addBtn" class="fixed bottom-6 right-6 z-20 w-14 h-14 rounded-full btn shadow-2xl text-2xl flex items-center justify-center">+</button>
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 glass rounded-xl px-4 py-2 text-sm hidden z-50"></div>
+
+<script>
+/* ================== STATE ================== */
+const state = {
+  cfg: JSON.parse(localStorage.getItem('fintrack_cfg') || '{}'),
+  txs: JSON.parse(localStorage.getItem('fintrack_cache') || '[]'),
+  rates: { USD_INR: 83.5, INR_USD: 1/83.5 }, // fallback
+  crypto: { sol: 0, tokens: [], totalUsd: 0 },
+  displayCur: localStorage.getItem('fintrack_cur') || 'INR',
+  editingId: null,
+  charts: {},
+};
+
+/* ================== UTILS ================== */
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+const toast = (msg) => {
+  const t = $('#toast'); t.textContent = msg; t.classList.remove('hidden');
+  setTimeout(() => t.classList.add('hidden'), 2500);
+};
+const fmt = (n, cur = state.displayCur) => {
+  const v = Number(n) || 0;
+  const sym = cur === 'INR' ? '₹' : '$';
+  return sym + v.toLocaleString(cur === 'INR' ? 'en-IN' : 'en-US', {
+    minimumFractionDigits: 2, maximumFractionDigits: 2
+  });
+};
+const toDisplay = (amount, fromCur) => {
+  if (fromCur === state.displayCur) return Number(amount);
+  if (fromCur === 'USD' && state.displayCur === 'INR') return Number(amount) * state.rates.USD_INR;
+  if (fromCur === 'INR' && state.displayCur === 'USD') return Number(amount) * state.rates.INR_USD;
+  return Number(amount);
+};
+const monthKey = (d) => {
+  const dt = new Date(d);
+  return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0');
+};
+const monthLabel = (k) => {
+  const [y, m] = k.split('-');
+  return new Date(y, m - 1).toLocaleString('en-US', { month: 'short', year: 'numeric' });
+};
+
+/* ================== GOOGLE SHEETS SYNC ================== */
+async function syncFromSheet() {
+  if (!state.cfg.sheetUrl) return;
+  try {
+    const r = await fetch(state.cfg.sheetUrl + '?action=get');
+    const data = await r.json();
+    if (Array.isArray(data)) {
+      state.txs = data.map((row, i) => ({
+        id: row.id || ('r' + i),
+        date: row.date,
+        type: row.type,
+        category: row.category || 'Other',
+        description: row.description || '',
+        amount: Number(row.amount) || 0,
+        currency: row.currency || 'INR',
+      }));
+      localStorage.setItem('fintrack_cache', JSON.stringify(state.txs));
+    }
+  } catch (e) {
+    console.warn('Sheet sync failed, using cache', e);
+  }
+}
+
+async function pushToSheet(tx, action = 'add') {
+  if (!state.cfg.sheetUrl) {
+    // Offline mode: save locally only
+    if (action === 'add') {
+      tx.id = 'local_' + Date.now();
+      state.txs.push(tx);
+    } else if (action === 'update') {
+      const i = state.txs.findIndex(t => t.id === tx.id);
+      if (i >= 0) state.txs[i] = tx;
+    } else if (action === 'delete') {
+      state.txs = state.txs.filter(t => t.id !== tx.id);
+    }
+    localStorage.setItem('fintrack_cache', JSON.stringify(state.txs));
+    return true;
+  }
+  try {
+    const r = await fetch(state.cfg.sheetUrl, {
+      method: 'POST',
+      mode: 'cors',
+      headers: { 'Content-Type': 'text/plain' }, // avoids preflight
+      body: JSON.stringify({ action, tx }),
+    });
+    await r.text();
+    await syncFromSheet();
+    return true;
+  } catch (e) {
+    console.error(e);
+    toast('Sync failed — saved locally');
+    return false;
+  }
+}
+
+/* ================== FX RATES ================== */
+async function fetchRates() {
+  try {
+    const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+    const d = await r.json();
+    if (d?.rates?.INR) {
+      state.rates.USD_INR = d.rates.INR;
+      state.rates.INR_USD = 1 / d.rates.INR;
+      $('#hdrRate').textContent = '1 USD = ₹' + d.rates.INR.toFixed(2);
+    }
+  } catch (e) {
+    $('#hdrRate').textContent = '1 USD ≈ ₹83.50 (offline)';
+  }
+}
+
+/* ================== CRYPTO (Multi-chain: Solana + ETH + Polygon + Base + BTC) ================== */
+
+// Token lists for EVM chains — only the most liquid tokens are tracked to keep API calls free
+// Format: { symbol, coingeckoId, contract (lowercase), decimals }
+const EVM_TOKENS = {
+  ethereum: [
+    { symbol: 'USDC', id: 'usd-coin', contract: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', decimals: 6 },
+    { symbol: 'USDT', id: 'tether', contract: '0xdac17f958d2ee523a2206206994597c13d831ec7', decimals: 6 },
+    { symbol: 'DAI', id: 'dai', contract: '0x6b175474e89094c44da98b954eedeac495271d0f', decimals: 18 },
+    { symbol: 'WBTC', id: 'wrapped-bitcoin', contract: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', decimals: 8 },
+    { symbol: 'WETH', id: 'weth', contract: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', decimals: 18 },
+    { symbol: 'LINK', id: 'chainlink', contract: '0x514910771af9ca656af840dff83e8264ecf986ca', decimals: 18 },
+    { symbol: 'UNI', id: 'uniswap', contract: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984', decimals: 18 },
+  ],
+  polygon: [
+    { symbol: 'USDC', id: 'usd-coin', contract: '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359', decimals: 6 },
+    { symbol: 'USDT', id: 'tether', contract: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f', decimals: 6 },
+    { symbol: 'WETH', id: 'weth', contract: '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619', decimals: 18 },
+    { symbol: 'DAI', id: 'dai', contract: '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063', decimals: 18 },
+  ],
+  base: [
+    { symbol: 'USDC', id: 'usd-coin', contract: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', decimals: 6 },
+    { symbol: 'WETH', id: 'weth', contract: '0x4200000000000000000000000000000000000006', decimals: 18 },
+  ],
+};
+
+const EVM_RPC = {
+  ethereum: 'https://eth.llamarpc.com',
+  polygon: 'https://polygon-rpc.com',
+  base: 'https://mainnet.base.org',
+};
+const EVM_NATIVE = {
+  ethereum: { symbol: 'ETH', id: 'ethereum' },
+  polygon: { symbol: 'MATIC', id: 'matic-network' },
+  base: { symbol: 'ETH', id: 'ethereum' },
+};
+
+async function rpcCall(url, method, params) {
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+  });
+  const d = await r.json();
+  return d.result;
+}
+
+// ERC-20 balanceOf(address) -> returns hex balance
+async function evmTokenBalance(rpc, wallet, contract) {
+  const data = '0x70a08231' + '000000000000000000000000' + wallet.slice(2).toLowerCase();
+  const res = await rpcCall(rpc, 'eth_call', [{ to: contract, data }, 'latest']);
+  return res ? parseInt(res, 16) : 0;
+}
+
+async function fetchEvmChain(chain, wallet) {
+  const rpc = EVM_RPC[chain];
+  const native = EVM_NATIVE[chain];
+  const results = [];
+  try {
+    const balHex = await rpcCall(rpc, 'eth_getBalance', [wallet, 'latest']);
+    const nativeAmt = parseInt(balHex, 16) / 1e18;
+    if (nativeAmt > 0) {
+      results.push({ chain, symbol: native.symbol, coingeckoId: native.id, amount: nativeAmt });
+    }
+    // Fetch token balances in parallel
+    const tokens = EVM_TOKENS[chain] || [];
+    const balances = await Promise.all(tokens.map(t => evmTokenBalance(rpc, wallet, t.contract).catch(() => 0)));
+    tokens.forEach((t, i) => {
+      const amt = balances[i] / Math.pow(10, t.decimals);
+      if (amt > 0.001) results.push({ chain, symbol: t.symbol, coingeckoId: t.id, amount: amt });
+    });
+  } catch (e) {
+    console.warn(chain + ' fetch failed', e);
+  }
+  return results;
+}
+
+async function fetchSolana(wallet) {
+  const rpc = 'https://api.mainnet-beta.solana.com';
+  const results = [];
+  try {
+    const balRes = await rpcCall(rpc, 'getBalance', [wallet]);
+    const sol = (balRes?.value || 0) / 1e9;
+    if (sol > 0) results.push({ chain: 'solana', symbol: 'SOL', coingeckoId: 'solana', amount: sol });
+
+    const tokRes = await rpcCall(rpc, 'getTokenAccountsByOwner', [
+      wallet,
+      { programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' },
+      { encoding: 'jsonParsed' },
+    ]);
+    const accts = tokRes?.value || [];
+    // Use Jupiter for Solana token prices
+    const mints = accts
+      .map(a => a.account.data.parsed.info)
+      .filter(i => Number(i.tokenAmount.uiAmount) > 0);
+
+    if (mints.length > 0) {
+      const mintIds = mints.map(m => m.mint).slice(0, 50).join(',');
+      let prices = {};
+      try {
+        const jupRes = await fetch('https://api.jup.ag/price/v2?ids=' + mintIds);
+        const jupData = await jupRes.json();
+        prices = jupData?.data || {};
+      } catch (e) {}
+      mints.forEach(m => {
+        const p = prices[m.mint];
+        results.push({
+          chain: 'solana',
+          symbol: m.mint.slice(0, 4) + '…',
+          amount: Number(m.tokenAmount.uiAmount),
+          priceUsd: p ? Number(p.price) : 0,
+          isPriced: true, // skip coingecko for these
+        });
+      });
+    }
+  } catch (e) {
+    console.warn('Solana fetch failed', e);
+  }
+  return results;
+}
+
+async function fetchBitcoin(wallet) {
+  const results = [];
+  try {
+    // blockstream.info is free + no key
+    const r = await fetch('https://blockstream.info/api/address/' + wallet);
+    const d = await r.json();
+    const funded = d?.chain_stats?.funded_txo_sum || 0;
+    const spent = d?.chain_stats?.spent_txo_sum || 0;
+    const btc = (funded - spent) / 1e8;
+    if (btc > 0) results.push({ chain: 'bitcoin', symbol: 'BTC', coingeckoId: 'bitcoin', amount: btc });
+  } catch (e) {
+    console.warn('BTC fetch failed', e);
+  }
+  return results;
+}
+
+async function fetchCrypto() {
+  const cfg = state.cfg;
+  const hasAny = cfg.walletSol || cfg.walletEvm || cfg.walletBtc;
+  if (!hasAny) {
+    $('#cryptoTotal').textContent = '—';
+    $('#solBalance').textContent = 'No wallets';
+    $('#tokenCount').textContent = '0';
+    $('#cryptoWallet').textContent = 'Add wallets in ⚙';
+    $('#cryptoHoldings').innerHTML = '<div class="text-sm text-[var(--muted)] text-center py-4">Set wallet addresses in settings</div>';
+    return;
+  }
+
+  const summary = [];
+  if (cfg.walletSol) summary.push('SOL: ' + cfg.walletSol.slice(0, 4) + '…');
+  if (cfg.walletEvm) summary.push('EVM: ' + cfg.walletEvm.slice(0, 6) + '…');
+  if (cfg.walletBtc) summary.push('BTC: ' + cfg.walletBtc.slice(0, 4) + '…');
+  $('#cryptoWallet').textContent = summary.join(' · ');
+
+  // Fetch all chains in parallel
+  const tasks = [];
+  if (cfg.walletSol) tasks.push(fetchSolana(cfg.walletSol));
+  if (cfg.walletEvm) {
+    tasks.push(fetchEvmChain('ethereum', cfg.walletEvm));
+    tasks.push(fetchEvmChain('polygon', cfg.walletEvm));
+    tasks.push(fetchEvmChain('base', cfg.walletEvm));
+  }
+  if (cfg.walletBtc) tasks.push(fetchBitcoin(cfg.walletBtc));
+
+  const all = (await Promise.all(tasks)).flat();
+
+  // Batch-fetch CoinGecko prices for everything that needs one
+  const idsToFetch = [...new Set(all.filter(h => h.coingeckoId && !h.isPriced).map(h => h.coingeckoId))];
+  let prices = {};
+  if (idsToFetch.length > 0) {
+    try {
+      const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=' + idsToFetch.join(',') + '&vs_currencies=usd');
+      prices = await r.json();
+    } catch (e) { console.warn('CoinGecko failed', e); }
+  }
+
+  let totalUsd = 0;
+  all.forEach(h => {
+    if (!h.isPriced && h.coingeckoId) {
+      h.priceUsd = prices[h.coingeckoId]?.usd || 0;
+    }
+    h.valueUsd = (h.priceUsd || 0) * h.amount;
+    totalUsd += h.valueUsd;
+  });
+
+  // Solana-specific stats for the legacy field
+  const solHolding = all.find(h => h.chain === 'solana' && h.symbol === 'SOL');
+  state.crypto = {
+    sol: solHolding?.amount || 0,
+    tokens: all,
+    totalUsd,
+  };
+  renderCrypto();
+}
+
+const CHAIN_LABELS = {
+  solana: { name: 'Solana', color: '#9945FF' },
+  ethereum: { name: 'Ethereum', color: '#627EEA' },
+  polygon: { name: 'Polygon', color: '#8247E5' },
+  base: { name: 'Base', color: '#0052FF' },
+  bitcoin: { name: 'Bitcoin', color: '#F7931A' },
+};
+
+function renderCrypto() {
+  const { tokens, totalUsd } = state.crypto;
+  const totalDisp = state.displayCur === 'INR' ? totalUsd * state.rates.USD_INR : totalUsd;
+  $('#cryptoTotal').textContent = fmt(totalDisp);
+  $('#statCrypto').textContent = fmt(totalDisp);
+
+  // "SOL Balance" box repurposed: show top holding
+  const sorted = [...tokens].sort((a, b) => (b.valueUsd || 0) - (a.valueUsd || 0));
+  const top = sorted[0];
+  $('#solBalance').textContent = top ? (top.amount.toLocaleString('en-US', { maximumFractionDigits: 4 }) + ' ' + top.symbol) : '—';
+  $('#tokenCount').textContent = tokens.filter(t => (t.valueUsd || 0) > 0.01).length;
+
+  // Group by chain for the list
+  const byChain = {};
+  sorted.forEach(t => {
+    if (!byChain[t.chain]) byChain[t.chain] = [];
+    byChain[t.chain].push(t);
+  });
+
+  let html = '';
+  Object.entries(byChain).forEach(([chain, holdings]) => {
+    const chainUsd = holdings.reduce((s, h) => s + (h.valueUsd || 0), 0);
+    const chainDisp = state.displayCur === 'INR' ? chainUsd * state.rates.USD_INR : chainUsd;
+    const label = CHAIN_LABELS[chain] || { name: chain, color: '#888' };
+    html += `<div class="mb-3">
+      <div class="flex items-center justify-between mb-2 px-1">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full" style="background:${label.color}"></div>
+          <span class="text-xs font-semibold">${label.name}</span>
+        </div>
+        <span class="text-xs num text-[var(--muted)]">${fmt(chainDisp)}</span>
+      </div>`;
+    holdings.forEach(h => {
+      const disp = state.displayCur === 'INR' ? (h.valueUsd || 0) * state.rates.USD_INR : (h.valueUsd || 0);
+      const pct = totalUsd > 0 ? ((h.valueUsd || 0) / totalUsd * 100) : 0;
+      html += `<div class="glass-2 rounded-xl p-3 flex items-center justify-between mb-1">
+        <div>
+          <div class="font-semibold text-sm">${h.symbol}</div>
+          <div class="text-[11px] text-[var(--muted)] num">${h.amount.toLocaleString('en-US', {maximumFractionDigits: 6})}</div>
+        </div>
+        <div class="text-right">
+          <div class="font-semibold text-sm num">${fmt(disp)}</div>
+          <div class="text-[11px] text-[var(--muted)] num">${pct.toFixed(1)}%</div>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  $('#cryptoHoldings').innerHTML = html || '<div class="text-sm text-[var(--muted)] text-center py-4">No holdings detected</div>';
+
+  // Doughnut by chain
+  const chainLabels = Object.keys(byChain).map(c => CHAIN_LABELS[c]?.name || c);
+  const chainValues = Object.values(byChain).map(hs => hs.reduce((s, h) => s + (h.valueUsd || 0), 0));
+  const chainColors = Object.keys(byChain).map(c => CHAIN_LABELS[c]?.color || '#888');
+  drawDoughnutCustom('chartCrypto', chainLabels, chainValues, chainColors);
+}
+
+function drawDoughnutCustom(id, labels, data, colors) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  state.charts[id] = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { color: '#8a95ab', font: { size: 11 }, boxWidth: 12 } },
+        tooltip: { callbacks: { label: (c) => c.label + ': ' + fmt(c.parsed) } }
+      }
+    }
+  });
+}
+
+/* ================== RENDER: DASHBOARD ================== */
+function renderDashboard() {
+  let income = 0, expense = 0, monthNet = 0;
+  const currentMonth = monthKey(new Date());
+  state.txs.forEach(t => {
+    const amt = toDisplay(t.amount, t.currency);
+    if (t.type === 'income') income += amt; else expense += amt;
+    if (monthKey(t.date) === currentMonth) {
+      monthNet += t.type === 'income' ? amt : -amt;
+    }
+  });
+  const cash = income - expense;
+  const cryptoDisp = state.displayCur === 'INR' ? state.crypto.totalUsd * state.rates.USD_INR : state.crypto.totalUsd;
+  $('#statNetWorth').textContent = fmt(cash + cryptoDisp);
+  $('#statCash').textContent = fmt(cash);
+  $('#statCashSub').textContent = `↑ ${fmt(income)} · ↓ ${fmt(expense)}`;
+  $('#statMonth').textContent = fmt(monthNet);
+  $('#statMonth').style.color = monthNet >= 0 ? 'var(--green)' : 'var(--red)';
+  $('#statMonthSub').textContent = new Date().toLocaleString('en-US', { month: 'long' });
+
+  // Cashflow chart (last 6 months)
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(); d.setMonth(d.getMonth() - i); d.setDate(1);
+    months.push(monthKey(d));
+  }
+  const incomeArr = months.map(m => 0), expenseArr = months.map(m => 0);
+  state.txs.forEach(t => {
+    const idx = months.indexOf(monthKey(t.date));
+    if (idx >= 0) {
+      const amt = toDisplay(t.amount, t.currency);
+      if (t.type === 'income') incomeArr[idx] += amt; else expenseArr[idx] += amt;
+    }
+  });
+  drawBars('chartCashflow', months.map(monthLabel), incomeArr, expenseArr);
+
+  // Categories pie
+  const catMap = {};
+  state.txs.filter(t => t.type === 'expense').forEach(t => {
+    catMap[t.category] = (catMap[t.category] || 0) + toDisplay(t.amount, t.currency);
+  });
+  const catEntries = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  drawDoughnut('chartCategories', catEntries.map(e => e[0]), catEntries.map(e => e[1]));
+
+  // Recent
+  const recent = [...state.txs].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6);
+  $('#recentList').innerHTML = recent.map(t => txRow(t, true)).join('') ||
+    '<div class="text-center text-sm text-[var(--muted)] py-4">No transactions yet. Tap + to add.</div>';
+}
+
+/* ================== RENDER: TX LIST ================== */
+function txRow(t, compact = false) {
+  const amt = toDisplay(t.amount, t.currency);
+  const isInc = t.type === 'income';
+  const color = isInc ? 'var(--green)' : 'var(--red)';
+  const sign = isInc ? '+' : '−';
+  if (compact) {
+    return `<div class="flex items-center justify-between py-2 border-b border-[var(--border)] last:border-0">
+      <div class="flex-1 min-w-0">
+        <div class="text-sm truncate">${escapeHtml(t.description || t.category)}</div>
+        <div class="text-[11px] text-[var(--muted)]">${t.date} · ${escapeHtml(t.category)}</div>
+      </div>
+      <div class="text-sm font-semibold num" style="color:${color}">${sign}${fmt(amt)}</div>
+    </div>`;
+  }
+  return `<div class="grid grid-cols-[1fr_80px] md:grid-cols-[110px_90px_1fr_140px_120px_40px] gap-3 px-4 py-3 items-center hover:bg-[var(--panel-2)]">
+    <div class="text-xs text-[var(--muted)] md:text-sm md:text-[var(--text)]">${t.date}</div>
+    <div class="hidden md:block"><span class="text-[10px] px-2 py-0.5 rounded-full ${isInc ? 'bg-green-900/40 text-green-400' : 'bg-red-900/40 text-red-400'}">${t.type}</span></div>
+    <div class="text-sm truncate">${escapeHtml(t.description || '-')}<div class="text-[11px] text-[var(--muted)] md:hidden">${escapeHtml(t.category)}</div></div>
+    <div class="hidden md:block text-xs text-[var(--muted)]">${escapeHtml(t.category)}</div>
+    <div class="text-sm font-semibold num text-right" style="color:${color}">${sign}${fmt(amt)}</div>
+    <div class="hidden md:flex justify-end gap-1">
+      <button class="editBtn text-xs text-[var(--muted)] hover:text-white px-1" data-id="${t.id}">✎</button>
+      <button class="delBtn text-xs text-[var(--muted)] hover:text-[var(--red)] px-1" data-id="${t.id}">✕</button>
+    </div>
+  </div>`;
+}
+
+function renderTxList() {
+  const q = $('#txSearch').value.toLowerCase();
+  const f = $('#txFilter').value;
+  let list = [...state.txs].sort((a, b) => b.date.localeCompare(a.date));
+  if (f !== 'all') list = list.filter(t => t.type === f);
+  if (q) list = list.filter(t => (t.description + ' ' + t.category).toLowerCase().includes(q));
+  $('#txList').innerHTML = list.map(t => txRow(t)).join('') ||
+    '<div class="text-center text-sm text-[var(--muted)] py-8">No transactions match.</div>';
+  $('#txListHead').classList.toggle('hidden', list.length === 0);
+  if (window.innerWidth < 768) $('#txListHead').classList.add('hidden');
+}
+
+/* ================== RENDER: MONTHLY ================== */
+function renderMonthly() {
+  const months = [...new Set(state.txs.map(t => monthKey(t.date)))].sort().reverse();
+  if (!months.length) months.push(monthKey(new Date()));
+  const sel = $('#monthSelect');
+  const current = sel.value || months[0];
+  sel.innerHTML = months.map(m => `<option value="${m}" ${m === current ? 'selected' : ''}>${monthLabel(m)}</option>`).join('');
+
+  const txs = state.txs.filter(t => monthKey(t.date) === current);
+  let income = 0, expense = 0;
+  const catMap = {}, dayMap = {};
+  txs.forEach(t => {
+    const amt = toDisplay(t.amount, t.currency);
+    if (t.type === 'income') income += amt;
+    else {
+      expense += amt;
+      catMap[t.category] = (catMap[t.category] || 0) + amt;
+      const d = t.date.slice(-2);
+      dayMap[d] = (dayMap[d] || 0) + amt;
+    }
+  });
+  const net = income - expense;
+  const savings = income > 0 ? (net / income * 100) : 0;
+  $('#mIncome').textContent = fmt(income);
+  $('#mExpense').textContent = fmt(expense);
+  $('#mNet').textContent = fmt(net);
+  $('#mNet').style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
+  $('#mSavings').textContent = savings.toFixed(1) + '%';
+  $('#mSavings').style.color = savings >= 20 ? 'var(--green)' : savings >= 0 ? 'var(--yellow)' : 'var(--red)';
+
+  const catEntries = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
+  const maxCat = catEntries[0]?.[1] || 1;
+  $('#mCategories').innerHTML = catEntries.map(([cat, amt]) => {
+    const pct = amt / maxCat * 100;
+    const share = expense ? (amt / expense * 100).toFixed(1) : 0;
+    return `<div>
+      <div class="flex justify-between text-xs mb-1">
+        <span>${escapeHtml(cat)}</span>
+        <span class="num text-[var(--muted)]">${fmt(amt)} · ${share}%</span>
+      </div>
+      <div class="h-2 rounded-full bg-[var(--border)] overflow-hidden">
+        <div class="h-full rounded-full" style="width:${pct}%; background: linear-gradient(90deg, var(--accent), var(--accent-2))"></div>
+      </div>
+    </div>`;
+  }).join('') || '<div class="text-xs text-[var(--muted)]">No expenses this month</div>';
+
+  // Daily spend line
+  const [y, m] = current.split('-');
+  const days = new Date(y, m, 0).getDate();
+  const labels = [], data = [];
+  for (let i = 1; i <= days; i++) {
+    labels.push(i);
+    data.push(dayMap[String(i).padStart(2, '0')] || 0);
+  }
+  drawLine('chartDaily', labels, data);
+}
+
+/* ================== CHARTS ================== */
+function destroyChart(id) {
+  if (state.charts[id]) state.charts[id].destroy();
+}
+function chartOpts(extra = {}) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: '#8a95ab', font: { size: 11 } } },
+      tooltip: {
+        backgroundColor: '#1a2236', borderColor: '#243049', borderWidth: 1,
+        titleColor: '#e6edf7', bodyColor: '#e6edf7',
+        callbacks: { label: (c) => c.label + ': ' + fmt(c.parsed.y ?? c.parsed) }
+      }
+    },
+    scales: extra.scales || {
+      x: { ticks: { color: '#8a95ab', font: { size: 10 } }, grid: { color: '#243049' } },
+      y: { ticks: { color: '#8a95ab', font: { size: 10 } }, grid: { color: '#243049' } }
+    }
+  };
+}
+const palette = ['#7c5cff', '#22d3ee', '#22c55e', '#eab308', '#ef4444', '#f97316', '#ec4899', '#14b8a6'];
+
+function drawBars(id, labels, income, expense) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  state.charts[id] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Income', data: income, backgroundColor: '#22c55e', borderRadius: 6 },
+        { label: 'Expense', data: expense, backgroundColor: '#ef4444', borderRadius: 6 },
+      ]
+    },
+    options: chartOpts()
+  });
+}
+function drawDoughnut(id, labels, data) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  state.charts[id] = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: palette, borderWidth: 0 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { color: '#8a95ab', font: { size: 11 }, boxWidth: 12 } },
+        tooltip: { callbacks: { label: (c) => c.label + ': ' + fmt(c.parsed) } }
+      }
+    }
+  });
+}
+function drawLine(id, labels, data) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  state.charts[id] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Spend', data,
+        borderColor: '#7c5cff', backgroundColor: 'rgba(124,92,255,0.2)',
+        tension: 0.3, fill: true, pointRadius: 2
+      }]
+    },
+    options: chartOpts()
+  });
+}
+
+/* ================== TX CRUD ================== */
+function openTxModal(tx = null) {
+  state.editingId = tx?.id || null;
+  $('#txModalTitle').textContent = tx ? 'Edit Transaction' : 'Add Transaction';
+  $('#txDate').value = tx?.date || new Date().toISOString().slice(0, 10);
+  $('#txType').value = tx?.type || 'expense';
+  $('#txCurrency').value = tx?.currency || 'INR';
+  $('#txCategory').value = tx?.category || '';
+  $('#txDesc').value = tx?.description || '';
+  $('#txAmount').value = tx?.amount || '';
+  $('#txStatus').textContent = '';
+  $('#txModal').classList.remove('hidden');
+}
+
+$('#saveTx').onclick = async () => {
+  const tx = {
+    id: state.editingId || ('local_' + Date.now()),
+    date: $('#txDate').value,
+    type: $('#txType').value,
+    category: $('#txCategory').value.trim() || 'Other',
+    description: $('#txDesc').value.trim(),
+    amount: Number($('#txAmount').value),
+    currency: $('#txCurrency').value,
+  };
+  if (!tx.date || !tx.amount) { $('#txStatus').textContent = 'Date & amount required'; return; }
+  $('#txStatus').textContent = 'Saving…';
+  await pushToSheet(tx, state.editingId ? 'update' : 'add');
+  $('#txModal').classList.add('hidden');
+  renderAll();
+  toast(state.editingId ? 'Updated' : 'Added');
+};
+
+$('#cancelTx').onclick = () => $('#txModal').classList.add('hidden');
+
+document.addEventListener('click', async (e) => {
+  if (e.target.classList.contains('editBtn')) {
+    const tx = state.txs.find(t => t.id === e.target.dataset.id);
+    if (tx) openTxModal(tx);
+  }
+  if (e.target.classList.contains('delBtn')) {
+    if (confirm('Delete this transaction?')) {
+      const tx = state.txs.find(t => t.id === e.target.dataset.id);
+      await pushToSheet(tx, 'delete');
+      renderAll();
+      toast('Deleted');
+    }
+  }
+});
+
+/* ================== CSV EXPORT ================== */
+$('#exportCsv').onclick = () => {
+  const rows = [['Date', 'Type', 'Category', 'Description', 'Amount', 'Currency']];
+  state.txs.forEach(t => rows.push([t.date, t.type, t.category, t.description, t.amount, t.currency]));
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'fintrack-' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+};
+
+/* ================== TABS ================== */
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.tabBtn');
+  if (!btn) return;
+  $$('.tabBtn').forEach(b => b.classList.remove('tab-active'));
+  btn.classList.add('tab-active');
+  $$('.tabPanel').forEach(p => p.classList.add('hidden'));
+  const panel = $('#tab-' + btn.dataset.tab);
+  panel.classList.remove('hidden');
+  panel.classList.add('grow-in');
+  if (btn.dataset.tab === 'tx') renderTxList();
+  if (btn.dataset.tab === 'monthly') renderMonthly();
+  if (btn.dataset.tab === 'crypto') renderCrypto();
+});
+
+/* ================== CURRENCY TOGGLE ================== */
+$$('.curBtn').forEach(b => b.addEventListener('click', () => {
+  $$('.curBtn').forEach(x => x.classList.remove('tab-active'));
+  b.classList.add('tab-active');
+  state.displayCur = b.dataset.cur;
+  localStorage.setItem('fintrack_cur', state.displayCur);
+  renderAll();
+}));
+
+/* ================== CONFIG ================== */
+$('#cfgBtn').onclick = () => {
+  $('#cfgSheetUrl').value = state.cfg.sheetUrl || '';
+  $('#cfgWalletSol').value = state.cfg.walletSol || '';
+  $('#cfgWalletEvm').value = state.cfg.walletEvm || '';
+  $('#cfgWalletBtc').value = state.cfg.walletBtc || '';
+  $('#cfgName').value = state.cfg.name || '';
+  $('#setupModal').classList.remove('hidden');
+};
+$('#closeCfg').onclick = () => $('#setupModal').classList.add('hidden');
+$('#saveCfg').onclick = () => {
+  state.cfg = {
+    sheetUrl: $('#cfgSheetUrl').value.trim(),
+    walletSol: $('#cfgWalletSol').value.trim(),
+    walletEvm: $('#cfgWalletEvm').value.trim(),
+    walletBtc: $('#cfgWalletBtc').value.trim(),
+    name: $('#cfgName').value.trim(),
+  };
+  localStorage.setItem('fintrack_cfg', JSON.stringify(state.cfg));
+  location.reload();
+};
+
+/* ================== MISC ================== */
+$('#addBtn').onclick = () => openTxModal();
+$('#refreshBtn').onclick = async () => {
+  $('#refreshBtn').classList.add('spin');
+  await Promise.all([fetchRates(), syncFromSheet(), fetchCrypto()]);
+  renderAll();
+  $('#refreshBtn').classList.remove('spin');
+  toast('Refreshed');
+};
+$('#txSearch').oninput = renderTxList;
+$('#txFilter').onchange = renderTxList;
+$('#monthSelect').onchange = renderMonthly;
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderAll() {
+  $('#hdrName').textContent = state.cfg.name || 'FinTrack';
+  renderDashboard();
+  const activeTab = document.querySelector('.tabBtn.tab-active')?.dataset.tab;
+  if (activeTab === 'tx') renderTxList();
+  if (activeTab === 'monthly') renderMonthly();
+  if (activeTab === 'crypto') renderCrypto();
+}
+
+/* ================== INIT ================== */
+(async function init() {
+  // Set active currency pill
+  $$('.curBtn').forEach(b => b.classList.toggle('tab-active', b.dataset.cur === state.displayCur));
+  if (!state.cfg.sheetUrl && !state.cfg.walletSol && !state.cfg.walletEvm && !state.cfg.walletBtc) {
+    $('#setupModal').classList.remove('hidden');
+  }
+  await fetchRates();
+  await syncFromSheet();
+  renderAll();
+  fetchCrypto(); // async, updates when ready
+  // Refresh crypto + rates every 60s
+  setInterval(() => { fetchCrypto(); fetchRates(); }, 60000);
+})();
+</script>
+</body>
+</html>
