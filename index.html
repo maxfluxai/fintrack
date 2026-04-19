@@ -574,11 +574,37 @@ const monthLabel = (k) => {
   const [y, m] = k.split('-');
   return new Date(y, m - 1).toLocaleString('en-US', { month: 'short', year: 'numeric' });
 };
+
+// Generates the current date in the USER's timezone (to prevent "today" defaulting to yesterday/tomorrow)
+const getLocalISODate = () => {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+};
+
+// Safely parses dates from Google Sheets (which are often mangled by UTC shifts) 
+// back into the exact YYYY-MM-DD that the user intended.
 const cleanDate = (d) => {
   if (!d) return '';
-  let s = String(d);
-  if (s.includes('T')) s = s.split('T')[0];
-  else if (s.includes(' ')) s = s.split(' ')[0];
+  let s = String(d).trim();
+  
+  // If it's already precisely YYYY-MM-DD, keep it.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+  // If Google Sheets returns an ISO string (e.g., 2026-04-10T18:30:00.000Z),
+  // evaluating it as a local Date() precisely reverses the timezone shift 
+  // and brings it back to the exact day the user actually inputted.
+  const dt = new Date(s);
+  if (!isNaN(dt.getTime())) {
+    const yr = dt.getFullYear();
+    const mo = String(dt.getMonth() + 1).padStart(2, '0');
+    const da = String(dt.getDate()).padStart(2, '0');
+    return `${yr}-${mo}-${da}`;
+  }
+  
+  // Final fallback
+  if (s.includes('T')) return s.split('T')[0];
+  if (s.includes(' ')) return s.split(' ')[0];
   return s;
 };
 
@@ -1249,7 +1275,7 @@ function drawLine(id, labels, data) {
 function openTxModal(tx = null) {
   state.editingId = tx?.id || null;
   $('#txModalTitle').textContent = tx ? 'Edit Transaction' : 'Add Transaction';
-  $('#txDate').value = tx?.date || new Date().toISOString().slice(0, 10);
+  $('#txDate').value = tx?.date || getLocalISODate(); // FIXED: Uses local timezone, not UTC
   $('#txType').value = tx?.type || 'income';
   $('#txCurrency').value = tx?.currency || 'INR';
   $('#txCategory').value = tx?.category || '';
