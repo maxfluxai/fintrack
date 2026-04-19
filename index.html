@@ -56,6 +56,20 @@
     box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
   }
 
+  /* Scrollbar hide utility for tabs */
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Mobile Performance Overrides */
+  @media (max-width: 768px) {
+    .ambient-bg { background: rgba(99, 102, 241, 0.05); } /* Remove heavy radial gradients */
+    .glass, .glass-2 { 
+      backdrop-filter: blur(8px); 
+      -webkit-backdrop-filter: blur(8px); 
+      box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.5); 
+    }
+  }
+
   /* Pills & Inputs */
   .pill { background: rgba(0,0,0,0.4); border: 1px solid var(--border); box-shadow: inset 0 1px 4px rgba(0,0,0,0.5); }
   input, select, textarea { 
@@ -71,7 +85,6 @@
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2), inset 0 1px 2px rgba(0,0,0,0.3) !important;
   }
 
-  /* Date Picker Custom Trick for Mobile Native Menus */
   input[type="date"] { position: relative; }
   input[type="date"]::-webkit-calendar-picker-indicator {
     position: absolute;
@@ -106,7 +119,6 @@
   /* Typography */
   .num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
   
-  /* Scrollbars */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
@@ -136,27 +148,25 @@
   .pop-anim { animation: num-pop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; display: inline-block; }
 
   /* Premium Stat Overrides */
-  #statNetWorth { font-size: 2rem !important; line-height: 2.25rem !important; background: linear-gradient(to right, #fff, #a1a1aa); -webkit-background-clip: text; color: transparent; letter-spacing: -0.03em; }
+  #statNetWorth {
+    background: linear-gradient(to right, #fff, #a1a1aa); 
+    -webkit-background-clip: text; 
+    color: transparent; 
+    letter-spacing: -0.03em; 
+  }
+  @media (min-width: 768px) {
+    #statNetWorth { font-size: 2rem !important; line-height: 2.25rem !important; }
+  }
+
   #tab-dash > .grid:first-child > .glass:first-child { position: relative; overflow: hidden; border-color: rgba(99, 102, 241, 0.3); }
   #tab-dash > .grid:first-child > .glass:first-child::before {
     content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
     background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15), transparent 60%); pointer-events: none;
   }
 
-  /* JS Rendered Element Styles (Strict no-JS modification workaround) */
-  #txList > div { transition: all 0.2s ease; border-bottom: 1px solid rgba(255,255,255,0.03) !important; }
-  #txList > div:hover { background: rgba(255,255,255,0.02) !important; transform: translateX(4px); }
-  #txList > div:last-child { border-bottom: none !important; }
-  
-  .editBtn, .delBtn { opacity: 0; transition: all 0.2s ease; transform: scale(0.9); }
-  #txList > div:hover .editBtn, #txList > div:hover .delBtn { opacity: 0.6; transform: scale(1); }
-  .editBtn:hover { opacity: 1 !important; color: var(--accent) !important; transform: scale(1.1); }
-  .delBtn:hover { opacity: 1 !important; color: var(--red) !important; transform: scale(1.1); }
-
   #cryptoHoldings .glass-2 { background: rgba(20, 20, 25, 0.5) !important; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); border-color: rgba(255,255,255,0.03) !important; }
   #cryptoHoldings .glass-2:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08); background: rgba(30, 30, 40, 0.6) !important; }
 
-  /* Header Glass */
   header { background: rgba(5, 5, 5, 0.75) !important; border-bottom-color: rgba(255,255,255,0.05) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
 </style>
 </head>
@@ -164,9 +174,8 @@
 
 <div class="ambient-bg"></div>
 
-<!-- ============ SETUP MODAL ============ -->
-<div id="setupModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-opacity duration-300">
-  <div class="glass rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl shadow-black/50 border border-[var(--border)]">
+<div id="setupModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 hidden transition-opacity duration-300">
+  <div class="glass rounded-2xl p-5 sm:p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl shadow-black/50 border border-[var(--border)]">
     <div class="flex items-center gap-2 mb-2">
       <svg class="w-5 h-5 text-[var(--muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
       <h2 class="text-xl font-bold tracking-tight">Setup</h2>
@@ -200,42 +209,16 @@
       <button id="saveCfg" class="btn rounded-lg px-4 py-2.5 text-sm font-semibold flex-1 shadow-lg">Save & Reload</button>
       <button id="closeCfg" class="btn-ghost rounded-lg px-4 py-2.5 text-sm font-medium">Close</button>
     </div>
-
-    <div class="mt-6 pt-4 border-t border-[var(--border)] space-y-3">
-      <details class="text-xs text-[var(--muted)] group">
-        <summary class="cursor-pointer hover:text-white font-medium transition-colors list-none flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 group-open:rotate-90 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          How to find your wallet addresses in Phantom
-        </summary>
-        <ol class="list-decimal ml-5 mt-3 space-y-1.5 leading-relaxed pl-2">
-          <li>Open Phantom. Tap the <b class="text-gray-300">account name at the top</b>.</li>
-          <li>You'll see a list of networks: Solana, Ethereum, Polygon, Base, Bitcoin.</li>
-          <li>Tap each one → <b class="text-gray-300">"Copy address"</b>. Paste into the matching field above.</li>
-          <li>ETH, Polygon, and Base all share the <b class="text-gray-300">same 0x... address</b> — paste it once in the EVM field.</li>
-          <li>Only public addresses go here. <b class="text-red-400">Never paste your seed phrase anywhere.</b></li>
-        </ol>
-      </details>
-      <details class="text-xs text-[var(--muted)] group">
-        <summary class="cursor-pointer hover:text-white font-medium transition-colors list-none flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 group-open:rotate-90 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          How to get the Sheet URL
-        </summary>
-        <div class="ml-5 mt-3 pl-2 leading-relaxed">
-          Follow the SETUP.md guide — it walks through every click to deploy your private Google Script.
-        </div>
-      </details>
-    </div>
   </div>
 </div>
 
-<!-- ============ ADD TRANSACTION MODAL ============ -->
-<div id="txModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 flex items-center justify-center p-4 hidden transition-opacity duration-300">
-  <div class="glass rounded-2xl p-6 max-w-md w-full shadow-2xl shadow-black/50 border border-[var(--border)]">
+<div id="txModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 flex items-center justify-center p-3 sm:p-4 hidden transition-opacity duration-300">
+  <div class="glass rounded-2xl p-5 sm:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl shadow-black/50 border border-[var(--border)]">
     <div class="flex items-center gap-2 mb-5">
       <svg class="w-5 h-5 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
       <h2 class="text-xl font-bold tracking-tight" id="txModalTitle">Add Transaction</h2>
     </div>
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid grid-cols-2 gap-3 sm:gap-4">
       <div class="col-span-2 relative">
         <label class="text-xs font-medium text-[var(--muted)] uppercase tracking-wider">Date</label>
         <input id="txDate" type="date" class="w-full rounded-lg p-2.5 mt-1 text-sm font-mono" />
@@ -283,45 +266,42 @@
       </div>
     </div>
     <div class="flex gap-3 mt-6">
-      <button id="saveTx" class="btn rounded-lg px-4 py-2.5 text-sm font-semibold flex-1 shadow-lg">Save Transaction</button>
+      <button id="saveTx" class="btn rounded-lg px-4 py-2.5 text-sm font-semibold flex-1 shadow-lg">Save</button>
       <button id="cancelTx" class="btn-ghost rounded-lg px-4 py-2.5 text-sm font-medium">Cancel</button>
     </div>
     <div id="txStatus" class="text-xs text-[var(--muted)] mt-4 text-center font-medium"></div>
   </div>
 </div>
 
-<!-- ============ HEADER ============ -->
 <header class="sticky top-0 z-30 backdrop-blur-xl bg-[var(--bg)]/80 border-b border-[var(--border)] transition-all">
-  <div class="max-w-7xl mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--accent)] to-[var(--accent-2)] flex items-center justify-center font-bold shadow-[0_0_15px_rgba(99,102,241,0.4)] ring-1 ring-white/10 relative overflow-hidden">
+  <div class="max-w-7xl mx-auto px-4 py-3.5 flex items-center justify-between gap-2 sm:gap-3">
+    <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+      <div class="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-gradient-to-br from-[var(--accent)] to-[var(--accent-2)] flex items-center justify-center font-bold shadow-[0_0_15px_rgba(99,102,241,0.4)] ring-1 ring-white/10 relative overflow-hidden">
         <span class="relative z-10 text-white text-lg">₹</span>
-        <div class="absolute inset-0 bg-white/20 translate-y-[100%] hover:translate-y-0 transition-transform duration-300"></div>
       </div>
-      <div class="flex flex-col justify-center">
-        <div class="font-bold text-sm tracking-tight" id="hdrName">FinTrack MaxfluxAI</div>
+      <div class="flex flex-col justify-center min-w-0">
+        <div class="font-bold text-sm tracking-tight truncate max-w-[140px] sm:max-w-none" id="hdrName">FinTrack MaxfluxAI</div>
         <div class="flex items-center gap-1.5 mt-0.5">
-          <div class="live-dot"></div>
-          <div class="text-[10px] text-[var(--muted)] num font-medium uppercase tracking-widest" id="hdrRate">loading rates…</div>
+          <div class="live-dot shrink-0"></div>
+          <div class="text-[9px] sm:text-[10px] text-[var(--muted)] num font-medium uppercase tracking-widest truncate" id="hdrRate">loading rates…</div>
         </div>
       </div>
     </div>
-    <div class="flex items-center gap-2.5">
-      <div class="pill rounded-full p-1 flex text-xs font-medium">
-        <button data-cur="INR" class="curBtn px-3.5 py-1.5 rounded-full tab-active transition-all">₹ INR</button>
-        <button data-cur="USD" class="curBtn px-3.5 py-1.5 rounded-full transition-all">$ USD</button>
+    <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+      <div class="pill rounded-full p-1 flex text-[10px] sm:text-xs font-medium">
+        <button data-cur="INR" class="curBtn px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-full tab-active transition-all">₹ INR</button>
+        <button data-cur="USD" class="curBtn px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-full transition-all">$ USD</button>
       </div>
-      <div class="w-px h-6 bg-[var(--border)] mx-1"></div>
-      <button id="refreshBtn" title="Refresh Data" class="btn-ghost rounded-full w-9 h-9 flex items-center justify-center text-sm group hover:bg-white/5">
+      <div class="w-px h-6 bg-[var(--border)] mx-0.5 sm:mx-1"></div>
+      <button id="refreshBtn" class="btn-ghost rounded-full w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-sm group">
         <svg class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500 text-[var(--muted)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
       </button>
-      <button id="cfgBtn" title="Settings" class="btn-ghost rounded-full w-9 h-9 flex items-center justify-center text-sm group hover:bg-white/5">
-        <svg class="w-4.5 h-4.5 group-hover:rotate-90 transition-transform duration-500 text-[var(--muted)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+      <button id="cfgBtn" class="btn-ghost rounded-full w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-sm group">
+        <svg class="w-4 h-4 sm:w-4.5 sm:h-4.5 group-hover:rotate-90 transition-transform duration-500 text-[var(--muted)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
       </button>
     </div>
   </div>
 
-  <!-- Tabs -->
   <div class="max-w-7xl mx-auto px-4 pb-3">
     <div class="pill rounded-xl p-1 flex gap-1 text-xs overflow-x-auto font-medium scrollbar-hide border border-white/5 relative">
       <button data-tab="dash" class="tabBtn px-4 py-2.5 rounded-lg tab-active whitespace-nowrap flex items-center gap-2 group">
@@ -344,64 +324,63 @@
   </div>
 </header>
 
-<main class="max-w-7xl mx-auto px-4 py-6 pb-32">
+<main class="max-w-7xl mx-auto px-4 py-5 sm:py-6 pb-32">
 
-  <!-- ============ DASHBOARD ============ -->
   <section id="tab-dash" class="tabPanel grow-in">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <div class="glass rounded-2xl p-5 flex flex-col justify-center">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+      <div class="glass rounded-2xl p-4 md:p-5 flex flex-col justify-center min-w-0">
         <div class="flex items-center gap-2 mb-2">
           <div class="w-1.5 h-4 rounded-full bg-gradient-to-b from-[var(--accent)] to-[var(--accent-2)]"></div>
-          <div class="text-[10px] text-[var(--muted)] font-semibold uppercase tracking-widest">Net Worth</div>
+          <div class="text-[10px] text-[var(--muted)] font-semibold uppercase tracking-widest truncate">Net Worth</div>
         </div>
-        <div id="statNetWorth" class="text-xl md:text-2xl font-bold mt-1 num">—</div>
-        <div class="text-[11px] text-[var(--muted)] mt-2 font-medium flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <div id="statNetWorth" class="text-xl md:text-2xl font-bold mt-1 num truncate">—</div>
+        <div class="text-[10px] sm:text-[11px] text-[var(--muted)] mt-2 font-medium flex items-center gap-1.5 truncate">
+          <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
           Cash + Crypto
         </div>
       </div>
-      <div class="glass rounded-2xl p-5 flex flex-col justify-center">
-        <div class="text-[10px] text-[var(--muted)] font-semibold uppercase tracking-widest mb-1">Cash Balance</div>
-        <div id="statCash" class="text-xl md:text-2xl font-bold mt-1 num text-white">—</div>
-        <div class="text-[11px] text-[var(--muted)] mt-2 font-medium num" id="statCashSub">Income − Expense</div>
+      <div class="glass rounded-2xl p-4 md:p-5 flex flex-col justify-center min-w-0">
+        <div class="text-[10px] text-[var(--muted)] font-semibold uppercase tracking-widest mb-1 truncate">Cash Balance</div>
+        <div id="statCash" class="text-lg sm:text-xl md:text-2xl font-bold mt-1 num text-white truncate">—</div>
+        <div class="text-[10px] sm:text-[11px] text-[var(--muted)] mt-2 font-medium num truncate" id="statCashSub">Income − Expense</div>
       </div>
-      <div class="glass rounded-2xl p-5 flex flex-col justify-center">
-        <div class="text-[10px] text-[var(--muted)] font-semibold uppercase tracking-widest mb-1">Crypto Value</div>
-        <div id="statCrypto" class="text-xl md:text-2xl font-bold mt-1 num text-white">—</div>
-        <div class="text-[11px] text-[var(--muted)] mt-2 font-medium" id="statCryptoSub">Multi-chain wallets</div>
+      <div class="glass rounded-2xl p-4 md:p-5 flex flex-col justify-center min-w-0">
+        <div class="text-[10px] text-[var(--muted)] font-semibold uppercase tracking-widest mb-1 truncate">Crypto Value</div>
+        <div id="statCrypto" class="text-lg sm:text-xl md:text-2xl font-bold mt-1 num text-white truncate">—</div>
+        <div class="text-[10px] sm:text-[11px] text-[var(--muted)] mt-2 font-medium truncate" id="statCryptoSub">Multi-chain</div>
       </div>
-      <div class="glass rounded-2xl p-5 flex flex-col justify-center">
-        <div class="text-[10px] text-[var(--muted)] font-semibold uppercase tracking-widest mb-1">This Month</div>
-        <div id="statMonth" class="text-xl md:text-2xl font-bold mt-1 num">—</div>
-        <div class="text-[11px] text-[var(--muted)] mt-2 font-medium" id="statMonthSub">Net flow</div>
+      <div class="glass rounded-2xl p-4 md:p-5 flex flex-col justify-center min-w-0">
+        <div class="text-[10px] text-[var(--muted)] font-semibold uppercase tracking-widest mb-1 truncate">This Month</div>
+        <div id="statMonth" class="text-lg sm:text-xl md:text-2xl font-bold mt-1 num truncate">—</div>
+        <div class="text-[10px] sm:text-[11px] text-[var(--muted)] mt-2 font-medium truncate" id="statMonthSub">Net flow</div>
       </div>
     </div>
 
     <div class="grid md:grid-cols-2 gap-4 mb-6">
-      <div class="glass rounded-2xl p-5">
+      <div class="glass rounded-2xl p-4 md:p-5">
         <div class="flex items-center justify-between mb-4 border-b border-[var(--border)] pb-3">
           <h3 class="font-semibold text-sm flex items-center gap-2">
             <svg class="w-4 h-4 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
             Monthly Cashflow
           </h3>
-          <span class="text-[10px] uppercase tracking-wider font-semibold text-[var(--muted)] bg-white/5 px-2 py-1 rounded">Last 6 months</span>
+          <span class="text-[9px] sm:text-[10px] uppercase tracking-wider font-semibold text-[var(--muted)] bg-white/5 px-2 py-1 rounded">Last 6 months</span>
         </div>
-        <div class="h-56 relative"><canvas id="chartCashflow"></canvas></div>
+        <div class="h-56 relative w-full"><canvas id="chartCashflow"></canvas></div>
       </div>
-      <div class="glass rounded-2xl p-5">
+      <div class="glass rounded-2xl p-4 md:p-5">
         <div class="flex items-center justify-between mb-4 border-b border-[var(--border)] pb-3">
           <h3 class="font-semibold text-sm flex items-center gap-2">
             <svg class="w-4 h-4 text-[var(--accent-2)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
             Expense Categories
           </h3>
-          <span class="text-[10px] uppercase tracking-wider font-semibold text-[var(--muted)] bg-white/5 px-2 py-1 rounded">All time</span>
+          <span class="text-[9px] sm:text-[10px] uppercase tracking-wider font-semibold text-[var(--muted)] bg-white/5 px-2 py-1 rounded">All time</span>
         </div>
-        <div class="h-56 relative"><canvas id="chartCategories"></canvas></div>
+        <div class="h-56 relative w-full"><canvas id="chartCategories"></canvas></div>
       </div>
     </div>
 
     <div class="glass rounded-2xl p-0 overflow-hidden border border-[var(--border)]">
-      <div class="flex items-center justify-between p-4 px-5 border-b border-[var(--border)] bg-white/[0.02]">
+      <div class="flex items-center justify-between p-3.5 md:p-4 md:px-5 border-b border-[var(--border)] bg-white/[0.02]">
         <h3 class="font-semibold text-sm flex items-center gap-2">
           <svg class="w-4 h-4 text-[var(--muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
           Recent Activity
@@ -414,120 +393,116 @@
     </div>
   </section>
 
-  <!-- ============ TRANSACTIONS ============ -->
   <section id="tab-tx" class="tabPanel hidden">
-    <div class="flex items-center gap-3 mb-5 flex-wrap">
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-5 flex-wrap">
       <div class="relative flex-1 min-w-[200px]">
         <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         <input id="txSearch" placeholder="Search description or category…" class="w-full rounded-lg pl-9 pr-4 py-2.5 text-sm" />
       </div>
-      <select id="txFilter" class="rounded-lg p-2.5 text-sm font-medium">
-        <option value="all">All types</option>
-        <option value="income">Income only</option>
-        <option value="expense">Expense only</option>
-      </select>
-      <button id="exportCsv" class="btn-ghost rounded-lg px-4 py-2.5 text-sm font-medium flex items-center gap-2 border border-[var(--border)]">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-        CSV
-      </button>
+      <div class="flex gap-2">
+        <select id="txFilter" class="flex-1 sm:flex-none rounded-lg p-2.5 text-sm font-medium">
+          <option value="all">All</option>
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+        </select>
+        <button id="exportCsv" class="btn-ghost rounded-lg px-4 py-2.5 text-sm font-medium flex items-center gap-2 border border-[var(--border)]">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          <span class="hidden sm:inline">CSV</span>
+        </button>
+      </div>
     </div>
     <div class="glass rounded-2xl overflow-hidden shadow-lg border border-[var(--border)]">
       <div id="txListHead" class="hidden md:grid grid-cols-[110px_90px_1fr_140px_120px_60px] gap-3 px-5 py-3.5 text-[10px] uppercase tracking-widest font-semibold text-[var(--muted)] border-b border-[var(--border)] bg-white/[0.02]">
         <div>Date</div><div>Type</div><div>Description</div><div>Category</div><div class="text-right">Amount</div><div></div>
       </div>
-      <div id="txList" class="divide-y divide-[var(--border)]"></div>
+      <div id="txList" class="flex flex-col"></div>
     </div>
   </section>
 
-  <!-- ============ CRYPTO ============ -->
   <section id="tab-crypto" class="tabPanel hidden">
-    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-      <div class="glass rounded-2xl p-5">
-        <div class="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-widest mb-1 flex items-center gap-2">
-          <svg class="w-3.5 h-3.5 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6">
+      <div class="glass rounded-2xl p-4 md:p-5 min-w-0">
+        <div class="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-widest mb-1 flex items-center gap-2 truncate">
+          <svg class="w-3.5 h-3.5 text-[var(--accent)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
           Total Value
         </div>
-        <div id="cryptoTotal" class="text-2xl md:text-3xl font-bold mt-1 num text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">—</div>
+        <div id="cryptoTotal" class="text-xl sm:text-2xl md:text-3xl font-bold mt-1 num text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 truncate">—</div>
       </div>
-      <div class="glass rounded-2xl p-5">
-        <div class="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-widest mb-1">Top Holding</div>
-        <div id="solBalance" class="text-xl md:text-2xl font-bold mt-1 num">—</div>
+      <div class="glass rounded-2xl p-4 md:p-5 min-w-0">
+        <div class="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-widest mb-1 truncate">Top Holding</div>
+        <div id="solBalance" class="text-lg sm:text-xl md:text-2xl font-bold mt-1 num truncate">—</div>
       </div>
-      <div class="glass rounded-2xl p-5 col-span-2 md:col-span-1">
-        <div class="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-widest mb-1">Unique Assets</div>
-        <div id="tokenCount" class="text-xl md:text-2xl font-bold mt-1 num">—</div>
+      <div class="glass rounded-2xl p-4 md:p-5 col-span-2 md:col-span-1 min-w-0">
+        <div class="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-widest mb-1 truncate">Unique Assets</div>
+        <div id="tokenCount" class="text-lg sm:text-xl md:text-2xl font-bold mt-1 num truncate">—</div>
       </div>
     </div>
-    <div class="glass rounded-2xl p-5 mb-6">
+    <div class="glass rounded-2xl p-4 md:p-5 mb-6">
       <div class="flex items-center justify-between mb-5 border-b border-[var(--border)] pb-3">
         <h3 class="font-semibold text-sm flex items-center gap-2">
-          <svg class="w-4 h-4 text-[var(--accent-2)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-          Portfolio Breakdown
+          <svg class="w-4 h-4 text-[var(--accent-2)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          Breakdown
         </h3>
-        <span class="text-[11px] font-mono text-[var(--muted)] bg-white/5 px-2 py-1 rounded flex items-center gap-1" id="cryptoWallet">
-          <div class="w-1.5 h-1.5 rounded-full bg-[var(--green)]"></div> —
+        <span class="text-[10px] sm:text-[11px] font-mono text-[var(--muted)] bg-white/5 px-2 py-1 rounded flex items-center gap-1 truncate max-w-[120px] sm:max-w-none" id="cryptoWallet">
+          <div class="w-1.5 h-1.5 rounded-full bg-[var(--green)] shrink-0"></div> —
         </span>
       </div>
-      <div class="h-64 mb-6 relative"><canvas id="chartCrypto"></canvas></div>
+      <div class="h-64 mb-6 relative w-full"><canvas id="chartCrypto"></canvas></div>
       <div id="cryptoHoldings" class="space-y-3"></div>
     </div>
   </section>
 
-  <!-- ============ MONTHLY ============ -->
   <section id="tab-monthly" class="tabPanel hidden">
     <div class="flex items-center gap-3 mb-6 bg-white/[0.02] p-2 rounded-xl border border-white/5">
-      <svg class="w-5 h-5 text-[var(--muted)] ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+      <svg class="w-5 h-5 text-[var(--muted)] ml-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
       <select id="monthSelect" class="bg-transparent border-none p-2 text-sm font-semibold flex-1 outline-none focus:ring-0 shadow-none"></select>
     </div>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <div class="glass rounded-2xl p-5 border-t-2 border-t-[var(--green)]">
-        <div class="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-widest">Income</div>
-        <div id="mIncome" class="text-xl md:text-2xl font-bold mt-2 num text-[var(--green)] drop-shadow-[0_0_10px_rgba(46,204,113,0.2)]">—</div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+      <div class="glass rounded-2xl p-4 md:p-5 border-t-2 border-t-[var(--green)] min-w-0">
+        <div class="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-widest truncate">Income</div>
+        <div id="mIncome" class="text-lg sm:text-xl md:text-2xl font-bold mt-2 num text-[var(--green)] drop-shadow-[0_0_10px_rgba(46,204,113,0.2)] truncate">—</div>
       </div>
-      <div class="glass rounded-2xl p-5 border-t-2 border-t-[var(--red)]">
-        <div class="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-widest">Expense</div>
-        <div id="mExpense" class="text-xl md:text-2xl font-bold mt-2 num text-[var(--red)] drop-shadow-[0_0_10px_rgba(239,68,68,0.2)]">—</div>
+      <div class="glass rounded-2xl p-4 md:p-5 border-t-2 border-t-[var(--red)] min-w-0">
+        <div class="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-widest truncate">Expense</div>
+        <div id="mExpense" class="text-lg sm:text-xl md:text-2xl font-bold mt-2 num text-[var(--red)] drop-shadow-[0_0_10px_rgba(239,68,68,0.2)] truncate">—</div>
       </div>
-      <div class="glass rounded-2xl p-5 border-t-2 border-t-[var(--text)]">
-        <div class="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-widest">Net</div>
-        <div id="mNet" class="text-xl md:text-2xl font-bold mt-2 num">—</div>
+      <div class="glass rounded-2xl p-4 md:p-5 border-t-2 border-t-[var(--text)] min-w-0">
+        <div class="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-widest truncate">Net</div>
+        <div id="mNet" class="text-lg sm:text-xl md:text-2xl font-bold mt-2 num truncate">—</div>
       </div>
-      <div class="glass rounded-2xl p-5 border-t-2 border-t-[var(--accent)]">
-        <div class="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-widest">Savings Rate</div>
-        <div id="mSavings" class="text-xl md:text-2xl font-bold mt-2 num">—</div>
+      <div class="glass rounded-2xl p-4 md:p-5 border-t-2 border-t-[var(--accent)] min-w-0">
+        <div class="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-widest truncate">Savings Rate</div>
+        <div id="mSavings" class="text-lg sm:text-xl md:text-2xl font-bold mt-2 num truncate">—</div>
       </div>
     </div>
     <div class="grid md:grid-cols-2 gap-4">
-      <div class="glass rounded-2xl p-5">
+      <div class="glass rounded-2xl p-4 md:p-5">
         <div class="flex items-center gap-2 mb-5 border-b border-[var(--border)] pb-3">
-          <svg class="w-4 h-4 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+          <svg class="w-4 h-4 text-[var(--accent)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
           <h3 class="font-semibold text-sm">Category Breakdown</h3>
         </div>
         <div id="mCategories" class="space-y-3"></div>
       </div>
-      <div class="glass rounded-2xl p-5">
+      <div class="glass rounded-2xl p-4 md:p-5">
         <div class="flex items-center gap-2 mb-5 border-b border-[var(--border)] pb-3">
-          <svg class="w-4 h-4 text-[var(--accent-2)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+          <svg class="w-4 h-4 text-[var(--accent-2)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
           <h3 class="font-semibold text-sm">Daily Spend</h3>
         </div>
-        <div class="h-56 relative"><canvas id="chartDaily"></canvas></div>
+        <div class="h-56 relative w-full"><canvas id="chartDaily"></canvas></div>
       </div>
     </div>
   </section>
 </main>
 
-<!-- FAB -->
-<button id="addBtn" class="fixed bottom-8 right-8 z-20 w-14 h-14 rounded-full btn shadow-[0_0_20px_rgba(99,102,241,0.5)] hover:shadow-[0_0_30px_rgba(99,102,241,0.7)] flex items-center justify-center group overflow-hidden">
+<button id="addBtn" class="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-20 w-12 h-12 sm:w-14 sm:h-14 rounded-full btn shadow-[0_0_20px_rgba(99,102,241,0.5)] hover:shadow-[0_0_30px_rgba(99,102,241,0.7)] flex items-center justify-center group overflow-hidden">
   <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 rounded-full"></div>
   <svg class="w-6 h-6 text-white group-hover:rotate-90 transition-transform duration-300 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
 </button>
 
-<!-- Toast -->
-<div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 glass rounded-full px-5 py-2.5 text-sm font-medium hidden z-50 shadow-[0_4px_20px_rgba(0,0,0,0.5)] border border-[var(--accent)] text-white"></div>
+<div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 glass rounded-full px-5 py-2.5 text-sm font-medium hidden z-50 shadow-[0_4px_20px_rgba(0,0,0,0.5)] border border-[var(--accent)] text-white whitespace-nowrap"></div>
 
 <script>
 /* ================== STATE ================== */
-// Hardcoded config — edit these values if wallets or Apps Script URL change
 const HARDCODED_CFG = {
   sheetUrl: 'https://script.google.com/macros/s/AKfycbwvZDXkrMbGHAytF5u539V87Cm8H54_dQ84CBrEwpgVU9f8XivHapAL2zNtKZYPtObKqQ/exec',
   walletSol: '4dzFHSuoCaf6pADokrSniNMde5FwCAU88wpgjJqFbFRX',
@@ -539,7 +514,7 @@ const HARDCODED_CFG = {
 const state = {
   cfg: HARDCODED_CFG,
   txs: JSON.parse(localStorage.getItem('fintrack_cache') || '[]'),
-  rates: { USD_INR: 83.5, INR_USD: 1/83.5 }, // fallback
+  rates: { USD_INR: 83.5, INR_USD: 1/83.5 },
   crypto: { sol: 0, tokens: [], totalUsd: 0 },
   displayCur: localStorage.getItem('fintrack_cur') || 'INR',
   editingId: null,
@@ -575,25 +550,16 @@ const monthLabel = (k) => {
   return new Date(y, m - 1).toLocaleString('en-US', { month: 'short', year: 'numeric' });
 };
 
-// Generates the current date in the USER's timezone (to prevent "today" defaulting to yesterday/tomorrow)
 const getLocalISODate = () => {
   const d = new Date();
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   return d.toISOString().slice(0, 10);
 };
 
-// Safely parses dates from Google Sheets (which are often mangled by UTC shifts) 
-// back into the exact YYYY-MM-DD that the user intended.
 const cleanDate = (d) => {
   if (!d) return '';
   let s = String(d).trim();
-  
-  // If it's already precisely YYYY-MM-DD, keep it.
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-
-  // If Google Sheets returns an ISO string (e.g., 2026-04-10T18:30:00.000Z),
-  // evaluating it as a local Date() precisely reverses the timezone shift 
-  // and brings it back to the exact day the user actually inputted.
   const dt = new Date(s);
   if (!isNaN(dt.getTime())) {
     const yr = dt.getFullYear();
@@ -601,8 +567,6 @@ const cleanDate = (d) => {
     const da = String(dt.getDate()).padStart(2, '0');
     return `${yr}-${mo}-${da}`;
   }
-  
-  // Final fallback
   if (s.includes('T')) return s.split('T')[0];
   if (s.includes(' ')) return s.split(' ')[0];
   return s;
@@ -633,7 +597,6 @@ async function syncFromSheet() {
 
 async function pushToSheet(tx, action = 'add') {
   if (!state.cfg.sheetUrl) {
-    // Offline mode: save locally only
     if (action === 'add') {
       tx.id = 'local_' + Date.now();
       state.txs.push(tx);
@@ -650,7 +613,7 @@ async function pushToSheet(tx, action = 'add') {
     const r = await fetch(state.cfg.sheetUrl, {
       method: 'POST',
       mode: 'cors',
-      headers: { 'Content-Type': 'text/plain' }, // avoids preflight
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action, tx }),
     });
     await r.text();
@@ -678,9 +641,7 @@ async function fetchRates() {
   }
 }
 
-/* ================== CRYPTO (Multi-chain: Solana + ETH + Polygon + Base + BTC) ================== */
-
-// Token lists for EVM chains — only the most liquid tokens are tracked to keep API calls free
+/* ================== CRYPTO (Multi-chain) ================== */
 const EVM_TOKENS = {
   ethereum: [
     { symbol: 'USDC', id: 'usd-coin', contract: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', decimals: 6 },
@@ -704,28 +665,9 @@ const EVM_TOKENS = {
 };
 
 const EVM_RPC = {
-  ethereum: [
-    'https://cloudflare-eth.com',
-    'https://eth.drpc.org',
-    'https://ethereum.blockpi.network/v1/rpc/public',
-    'https://rpc.ankr.com/eth',
-    'https://1rpc.io/eth',
-    'https://eth.llamarpc.com',
-  ],
-  polygon: [
-    'https://polygon.drpc.org',
-    'https://polygon.blockpi.network/v1/rpc/public',
-    'https://rpc.ankr.com/polygon',
-    'https://1rpc.io/matic',
-    'https://polygon.llamarpc.com',
-  ],
-  base: [
-    'https://base.drpc.org',
-    'https://base.blockpi.network/v1/rpc/public',
-    'https://mainnet.base.org',
-    'https://1rpc.io/base',
-    'https://base.llamarpc.com',
-  ],
+  ethereum: ['https://cloudflare-eth.com', 'https://eth.drpc.org', 'https://ethereum.blockpi.network/v1/rpc/public'],
+  polygon: ['https://polygon.drpc.org', 'https://polygon.blockpi.network/v1/rpc/public'],
+  base: ['https://base.drpc.org', 'https://base.blockpi.network/v1/rpc/public'],
 };
 const EVM_NATIVE = {
   ethereum: { symbol: 'ETH', id: 'ethereum' },
@@ -747,20 +689,18 @@ async function rpcCall(urlOrList, method, params) {
         signal: ctrl.signal,
       });
       clearTimeout(timeout);
-      if (!r.ok) { lastErr = new Error('HTTP ' + r.status + ' from ' + url); console.warn(lastErr.message); continue; }
+      if (!r.ok) { lastErr = new Error('HTTP ' + r.status + ' from ' + url); continue; }
       const d = await r.json();
-      if (d.error) { lastErr = new Error((d.error.message || 'rpc error') + ' from ' + url); console.warn(lastErr.message); continue; }
+      if (d.error) { lastErr = new Error((d.error.message || 'rpc error') + ' from ' + url); continue; }
       return d.result;
     } catch (e) {
       lastErr = e;
-      console.warn('[RPC fail]', url, '-', e.message || e);
       continue;
     }
   }
   throw lastErr || new Error('all RPCs failed');
 }
 
-// ERC-20 balanceOf(address) -> returns hex balance
 async function evmTokenBalance(rpcList, wallet, contract) {
   const data = '0x70a08231' + '000000000000000000000000' + wallet.slice(2).toLowerCase();
   try {
@@ -783,38 +723,27 @@ async function fetchEvmChain(chain, wallet) {
   const rpcList = EVM_RPC[chain];
   const native = EVM_NATIVE[chain];
   const results = [];
-  const lcWallet = wallet.toLowerCase(); // some RPCs reject mixed case
+  const lcWallet = wallet.toLowerCase();
   try {
     const balHex = await rpcCall(rpcList, 'eth_getBalance', [lcWallet, 'latest']);
     const nativeWei = balHex && balHex !== '0x' ? BigInt(balHex) : 0n;
     const nativeAmt = bigIntToFloat(nativeWei, 18);
-    console.log(`[FinTrack ${chain}] native ${native.symbol}:`, nativeAmt, '(hex:', balHex, ')');
-    if (nativeAmt > 0) {
-      results.push({ chain, symbol: native.symbol, coingeckoId: native.id, amount: nativeAmt });
-    }
-    // Fetch token balances in parallel, each can fail independently
+    if (nativeAmt > 0) results.push({ chain, symbol: native.symbol, coingeckoId: native.id, amount: nativeAmt });
+    
     const tokens = EVM_TOKENS[chain] || [];
     const balances = await Promise.all(tokens.map(t => evmTokenBalance(rpcList, lcWallet, t.contract)));
     tokens.forEach((t, i) => {
-      const raw = balances[i]; // BigInt
-      console.log(`[FinTrack ${chain}] ${t.symbol}:`, raw.toString());
+      const raw = balances[i];
       if (raw === 0n) return;
       const amt = bigIntToFloat(raw, t.decimals);
       if (amt > 0) results.push({ chain, symbol: t.symbol, coingeckoId: t.id, amount: amt });
     });
-  } catch (e) {
-    console.error(`[FinTrack ${chain}] FAILED:`, e);
-  }
+  } catch (e) { console.error(`[FinTrack ${chain}] FAILED:`, e); }
   return results;
 }
 
 async function fetchSolana(wallet) {
-  const rpc = [
-    'https://solana-rpc.publicnode.com',
-    'https://solana.drpc.org',
-    'https://solana.blockpi.network/v1/rpc/public',
-    'https://api.mainnet-beta.solana.com',
-  ];
+  const rpc = ['https://solana-rpc.publicnode.com', 'https://solana.drpc.org', 'https://api.mainnet-beta.solana.com'];
   const results = [];
   try {
     const balRes = await rpcCall(rpc, 'getBalance', [wallet]);
@@ -822,15 +751,10 @@ async function fetchSolana(wallet) {
     if (sol > 0) results.push({ chain: 'solana', symbol: 'SOL', coingeckoId: 'solana', amount: sol });
 
     const tokRes = await rpcCall(rpc, 'getTokenAccountsByOwner', [
-      wallet,
-      { programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' },
-      { encoding: 'jsonParsed' },
+      wallet, { programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' }, { encoding: 'jsonParsed' },
     ]);
     const accts = tokRes?.value || [];
-    // Use Jupiter for Solana token prices
-    const mints = accts
-      .map(a => a.account.data.parsed.info)
-      .filter(i => Number(i.tokenAmount.uiAmount) > 0);
+    const mints = accts.map(a => a.account.data.parsed.info).filter(i => Number(i.tokenAmount.uiAmount) > 0);
 
     if (mints.length > 0) {
       const mintIds = mints.map(m => m.mint).slice(0, 50).join(',');
@@ -843,33 +767,25 @@ async function fetchSolana(wallet) {
       mints.forEach(m => {
         const p = prices[m.mint];
         results.push({
-          chain: 'solana',
-          symbol: m.mint.slice(0, 4) + '…',
-          amount: Number(m.tokenAmount.uiAmount),
-          priceUsd: p ? Number(p.price) : 0,
-          isPriced: true, // skip coingecko for these
+          chain: 'solana', symbol: m.mint.slice(0, 4) + '…',
+          amount: Number(m.tokenAmount.uiAmount), priceUsd: p ? Number(p.price) : 0, isPriced: true,
         });
       });
     }
-  } catch (e) {
-    console.warn('Solana fetch failed', e);
-  }
+  } catch (e) { console.warn('Solana fetch failed', e); }
   return results;
 }
 
 async function fetchBitcoin(wallet) {
   const results = [];
   try {
-    // blockstream.info is free + no key
     const r = await fetch('https://blockstream.info/api/address/' + wallet);
     const d = await r.json();
     const funded = d?.chain_stats?.funded_txo_sum || 0;
     const spent = d?.chain_stats?.spent_txo_sum || 0;
     const btc = (funded - spent) / 1e8;
     if (btc > 0) results.push({ chain: 'bitcoin', symbol: 'BTC', coingeckoId: 'bitcoin', amount: btc });
-  } catch (e) {
-    console.warn('BTC fetch failed', e);
-  }
+  } catch (e) { console.warn('BTC fetch failed', e); }
   return results;
 }
 
@@ -877,10 +793,8 @@ async function fetchCrypto() {
   const cfg = state.cfg;
   const hasAny = cfg.walletSol || cfg.walletEvm || cfg.walletBtc;
   if (!hasAny) {
-    $('#cryptoTotal').textContent = '—';
-    $('#solBalance').textContent = 'No wallets';
-    $('#tokenCount').textContent = '0';
-    $('#cryptoWallet').textContent = 'Add wallets in ⚙';
+    $('#cryptoTotal').textContent = '—'; $('#solBalance').textContent = 'No wallets';
+    $('#tokenCount').textContent = '0'; $('#cryptoWallet').textContent = 'Add wallets in ⚙';
     $('#cryptoHoldings').innerHTML = '<div class="text-sm text-[var(--muted)] text-center py-4">Set wallet addresses in settings</div>';
     return;
   }
@@ -889,24 +803,20 @@ async function fetchCrypto() {
   if (cfg.walletSol) summary.push('SOL: ' + cfg.walletSol.slice(0, 4) + '…');
   if (cfg.walletEvm) summary.push('EVM: ' + cfg.walletEvm.slice(0, 6) + '…');
   if (cfg.walletBtc) summary.push('BTC: ' + cfg.walletBtc.slice(0, 4) + '…');
-  $('#cryptoWallet').innerHTML = `<div class="w-1.5 h-1.5 rounded-full bg-[var(--green)]"></div> ` + summary.join(' · ');
+  $('#cryptoWallet').innerHTML = `<div class="w-1.5 h-1.5 rounded-full bg-[var(--green)] shrink-0"></div> ` + summary.join(' · ');
 
-  // Fetch all chains in parallel
   const tasks = [];
-  const taskNames = [];
-  if (cfg.walletSol) { tasks.push(fetchSolana(cfg.walletSol)); taskNames.push('solana'); }
+  if (cfg.walletSol) tasks.push(fetchSolana(cfg.walletSol));
   if (cfg.walletEvm) {
-    tasks.push(fetchEvmChain('ethereum', cfg.walletEvm)); taskNames.push('ethereum');
-    tasks.push(fetchEvmChain('polygon', cfg.walletEvm)); taskNames.push('polygon');
-    tasks.push(fetchEvmChain('base', cfg.walletEvm)); taskNames.push('base');
+    tasks.push(fetchEvmChain('ethereum', cfg.walletEvm));
+    tasks.push(fetchEvmChain('polygon', cfg.walletEvm));
+    tasks.push(fetchEvmChain('base', cfg.walletEvm));
   }
-  if (cfg.walletBtc) { tasks.push(fetchBitcoin(cfg.walletBtc)); taskNames.push('bitcoin'); }
+  if (cfg.walletBtc) tasks.push(fetchBitcoin(cfg.walletBtc));
 
   const chainResults = await Promise.all(tasks);
-  chainResults.forEach((r, i) => console.log(`[FinTrack] ${taskNames[i]}:`, r));
   const all = chainResults.flat();
 
-  // Batch-fetch CoinGecko prices for everything that needs one
   const idsToFetch = [...new Set(all.filter(h => h.coingeckoId && !h.isPriced).map(h => h.coingeckoId))];
   let prices = {};
   if (idsToFetch.length > 0) {
@@ -918,30 +828,20 @@ async function fetchCrypto() {
 
   let totalUsd = 0;
   all.forEach(h => {
-    if (!h.isPriced && h.coingeckoId) {
-      h.priceUsd = prices[h.coingeckoId]?.usd || 0;
-    }
+    if (!h.isPriced && h.coingeckoId) h.priceUsd = prices[h.coingeckoId]?.usd || 0;
     h.valueUsd = (h.priceUsd || 0) * h.amount;
     totalUsd += h.valueUsd;
   });
 
-  // Solana-specific stats for the legacy field
   const solHolding = all.find(h => h.chain === 'solana' && h.symbol === 'SOL');
-  state.crypto = {
-    sol: solHolding?.amount || 0,
-    tokens: all,
-    totalUsd,
-  };
-  
+  state.crypto = { sol: solHolding?.amount || 0, tokens: all, totalUsd };
   renderCrypto();
-  renderDashboard(); // Ensures the dashboard updates Net Worth immediately when crypto fetches
+  renderDashboard();
 }
 
 const CHAIN_LABELS = {
-  solana: { name: 'Solana', color: '#9945FF' },
-  ethereum: { name: 'Ethereum', color: '#627EEA' },
-  polygon: { name: 'Polygon', color: '#8247E5' },
-  base: { name: 'Base', color: '#0052FF' },
+  solana: { name: 'Solana', color: '#9945FF' }, ethereum: { name: 'Ethereum', color: '#627EEA' },
+  polygon: { name: 'Polygon', color: '#8247E5' }, base: { name: 'Base', color: '#0052FF' },
   bitcoin: { name: 'Bitcoin', color: '#F7931A' },
 };
 
@@ -949,20 +849,15 @@ function renderCrypto() {
   const { tokens, totalUsd } = state.crypto;
   const totalDisp = state.displayCur === 'INR' ? totalUsd * state.rates.USD_INR : totalUsd;
   $('#cryptoTotal').textContent = fmt(totalDisp);
-  $('#statCrypto').textContent = fmt(totalDisp); // Also update here to catch tab switches
+  $('#statCrypto').textContent = fmt(totalDisp);
 
-  // "SOL Balance" box repurposed: show top holding
   const sorted = [...tokens].sort((a, b) => (b.valueUsd || 0) - (a.valueUsd || 0));
   const top = sorted[0];
   $('#solBalance').textContent = top ? (top.amount.toLocaleString('en-US', { maximumFractionDigits: 4 }) + ' ' + top.symbol) : '—';
   $('#tokenCount').textContent = tokens.filter(t => (t.valueUsd || 0) > 0.01).length;
 
-  // Group by chain for the list
   const byChain = {};
-  sorted.forEach(t => {
-    if (!byChain[t.chain]) byChain[t.chain] = [];
-    byChain[t.chain].push(t);
-  });
+  sorted.forEach(t => { if (!byChain[t.chain]) byChain[t.chain] = []; byChain[t.chain].push(t); });
 
   let html = '';
   Object.entries(byChain).forEach(([chain, holdings]) => {
@@ -982,11 +877,11 @@ function renderCrypto() {
       const pct = totalUsd > 0 ? ((h.valueUsd || 0) / totalUsd * 100) : 0;
       html += `<div class="glass-2 rounded-xl p-3.5 flex items-center justify-between mb-2 border border-white/5 relative overflow-hidden group">
         <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b opacity-0 group-hover:opacity-100 transition-opacity" style="--tw-gradient-from:${label.color}; --tw-gradient-to:transparent"></div>
-        <div class="pl-2">
-          <div class="font-bold text-sm tracking-tight">${h.symbol}</div>
-          <div class="text-[11px] text-[var(--muted)] font-medium num mt-0.5">${h.amount.toLocaleString('en-US', {maximumFractionDigits: 6})}</div>
+        <div class="pl-2 min-w-0 pr-2">
+          <div class="font-bold text-sm tracking-tight truncate">${h.symbol}</div>
+          <div class="text-[11px] text-[var(--muted)] font-medium num mt-0.5 truncate">${h.amount.toLocaleString('en-US', {maximumFractionDigits: 6})}</div>
         </div>
-        <div class="text-right">
+        <div class="text-right shrink-0">
           <div class="font-bold text-sm num text-white group-hover:text-[var(--accent)] transition-colors">${fmt(disp)}</div>
           <div class="text-[11px] text-[var(--muted)] font-medium num mt-0.5">${pct.toFixed(1)}%</div>
         </div>
@@ -996,7 +891,6 @@ function renderCrypto() {
   });
   $('#cryptoHoldings').innerHTML = html || '<div class="text-sm text-[var(--muted)] text-center py-4">No holdings detected</div>';
 
-  // Doughnut by chain (Fixed currency scale)
   const chainLabels = Object.keys(byChain).map(c => CHAIN_LABELS[c]?.name || c);
   const chainValues = Object.values(byChain).map(hs => {
     const usdVal = hs.reduce((s, h) => s + (h.valueUsd || 0), 0);
@@ -1014,8 +908,7 @@ function drawDoughnutCustom(id, labels, data, colors) {
     type: 'doughnut',
     data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0, hoverOffset: 4 }] },
     options: {
-      cutout: '75%',
-      responsive: true, maintainAspectRatio: false,
+      cutout: '75%', responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { position: 'right', labels: { color: '#8b92a5', font: { family: 'Inter', size: 11, weight: '500' }, usePointStyle: true, boxWidth: 8 } },
         tooltip: {
@@ -1039,19 +932,17 @@ function renderDashboard() {
     }
   });
   const cash = income - expense;
-  
-  // FIXED: Ensure Dashboard Crypto value dynamically updates when currency is switched
   const cryptoDisp = state.displayCur === 'INR' ? state.crypto.totalUsd * state.rates.USD_INR : state.crypto.totalUsd;
+  
   $('#statNetWorth').textContent = fmt(cash + cryptoDisp);
   $('#statCash').textContent = fmt(cash);
-  $('#statCrypto').textContent = fmt(cryptoDisp); // Updates correctly here now!
+  $('#statCrypto').textContent = fmt(cryptoDisp);
   
   $('#statCashSub').innerHTML = `<span class="text-[var(--green)]">↑ ${fmt(income)}</span> <span class="mx-1 text-white/20">·</span> <span class="text-[var(--red)]">↓ ${fmt(expense)}</span>`;
   $('#statMonth').textContent = fmt(monthNet);
   $('#statMonth').style.color = monthNet >= 0 ? 'var(--green)' : 'var(--red)';
   $('#statMonthSub').textContent = new Date().toLocaleString('en-US', { month: 'long' }) + ' flow';
 
-  // Cashflow chart (last 6 months)
   const months = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(); d.setMonth(d.getMonth() - i); d.setDate(1);
@@ -1067,7 +958,6 @@ function renderDashboard() {
   });
   drawBars('chartCashflow', months.map(monthLabel), incomeArr, expenseArr);
 
-  // Categories pie
   const catMap = {};
   state.txs.filter(t => t.type === 'expense').forEach(t => {
     catMap[t.category] = (catMap[t.category] || 0) + toDisplay(t.amount, t.currency);
@@ -1075,7 +965,6 @@ function renderDashboard() {
   const catEntries = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 8);
   drawDoughnut('chartCategories', catEntries.map(e => e[0]), catEntries.map(e => e[1]));
 
-  // Recent
   const recent = [...state.txs].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6);
   $('#recentList').innerHTML = recent.map(t => txRow(t, true)).join('') ||
     '<div class="text-center text-sm font-medium text-[var(--muted)] py-8 flex flex-col items-center gap-2"><svg class="w-8 h-8 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>No transactions yet. Tap + to add.</div>';
@@ -1087,26 +976,48 @@ function txRow(t, compact = false) {
   const isInc = t.type === 'income';
   const color = isInc ? 'var(--green)' : 'var(--red)';
   const sign = isInc ? '+' : '−';
+  
   if (compact) {
     return `<div class="flex items-center justify-between py-2.5 px-3 hover:bg-white/[0.03] transition-colors rounded-lg group">
       <div class="flex-1 min-w-0 flex items-center gap-3">
-        <div class="w-8 h-8 rounded-full flex items-center justify-center ${isInc ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isInc ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${isInc ? 'M5 10l7-7m0 0l7 7m-7-7v18' : 'M19 14l-7 7m0 0l-7-7m7 7V3'}"></path></svg>
         </div>
-        <div>
+        <div class="min-w-0 pr-2">
           <div class="text-sm font-medium truncate text-white">${escapeHtml(t.description || t.category)}</div>
-          <div class="text-[11px] text-[var(--muted)] font-medium mt-0.5">${t.date} <span class="mx-1 opacity-50">•</span> ${escapeHtml(t.category)}</div>
+          <div class="text-[11px] text-[var(--muted)] font-medium mt-0.5 truncate">${t.date} <span class="mx-1 opacity-50">•</span> ${escapeHtml(t.category)}</div>
         </div>
       </div>
-      <div class="text-sm font-bold num tracking-tight" style="color:${color}">${sign}${fmt(amt)}</div>
+      <div class="text-sm font-bold num tracking-tight shrink-0" style="color:${color}">${sign}${fmt(amt)}</div>
     </div>`;
   }
-  return `<div class="grid grid-cols-[1fr_80px] md:grid-cols-[110px_90px_1fr_140px_120px_60px] gap-3 px-5 py-3.5 items-center hover:bg-white/[0.02] group">
-    <div class="text-xs text-[var(--muted)] md:text-sm md:text-[var(--text)] font-medium num">${t.date}</div>
+  
+  // Fully responsive grid/flex layout for main transaction list
+  return `<div class="flex flex-col md:grid md:grid-cols-[110px_90px_1fr_140px_120px_60px] gap-2 md:gap-3 px-4 md:px-5 py-3 md:py-3.5 items-start md:items-center hover:bg-white/[0.02] group border-b border-[var(--border)] last:border-0 relative">
+    
+    <div class="flex justify-between items-center w-full md:w-auto">
+      <div class="flex items-center gap-2">
+        <div class="text-xs text-[var(--muted)] md:text-sm md:text-[var(--text)] font-medium num">${t.date}</div>
+        <span class="md:hidden text-[9px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded border ${isInc ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}">${t.type}</span>
+      </div>
+      <div class="text-sm font-bold num tracking-tight md:hidden" style="color:${color}">${sign}${fmt(amt)}</div>
+    </div>
+
     <div class="hidden md:block"><span class="text-[10px] font-bold tracking-widest uppercase px-2 py-1 rounded border ${isInc ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}">${t.type}</span></div>
-    <div class="text-sm font-medium truncate text-white">${escapeHtml(t.description || '-')}<div class="text-[11px] text-[var(--muted)] md:hidden mt-0.5">${escapeHtml(t.category)}</div></div>
-    <div class="hidden md:block text-xs font-medium text-[var(--muted)] bg-black/20 px-2 py-1 rounded inline-block w-max border border-white/5">${escapeHtml(t.category)}</div>
-    <div class="text-sm font-bold num text-right tracking-tight" style="color:${color}">${sign}${fmt(amt)}</div>
+    
+    <div class="w-full md:w-auto flex justify-between items-start md:block min-w-0">
+      <div class="min-w-0 flex-1">
+        <div class="text-sm font-medium truncate text-white">${escapeHtml(t.description || '-')}</div>
+        <div class="text-[11px] text-[var(--muted)] md:hidden mt-0.5 truncate">${escapeHtml(t.category)}</div>
+      </div>
+      <div class="flex md:hidden gap-1 mt-1 ml-3 shrink-0">
+        <button class="editBtn text-[var(--muted)] hover:text-[var(--accent)] p-1.5 bg-white/5 rounded transition-colors" data-id="${t.id}"><svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+        <button class="delBtn text-[var(--muted)] hover:text-[var(--red)] p-1.5 bg-white/5 rounded transition-colors" data-id="${t.id}"><svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+      </div>
+    </div>
+
+    <div class="hidden md:block text-xs font-medium text-[var(--muted)] bg-black/20 px-2 py-1 rounded w-max border border-white/5">${escapeHtml(t.category)}</div>
+    <div class="hidden md:block text-sm font-bold num text-right tracking-tight" style="color:${color}">${sign}${fmt(amt)}</div>
     <div class="hidden md:flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
       <button class="editBtn text-[var(--muted)] hover:bg-white/10 p-1.5 rounded-lg transition-colors" data-id="${t.id}"><svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
       <button class="delBtn text-[var(--muted)] hover:bg-red-500/10 p-1.5 rounded-lg transition-colors" data-id="${t.id}"><svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
@@ -1163,8 +1074,8 @@ function renderMonthly() {
     const share = expense ? (amt / expense * 100).toFixed(1) : 0;
     return `<div class="group">
       <div class="flex justify-between text-xs font-semibold mb-1.5 px-1">
-        <span class="text-white group-hover:text-[var(--accent)] transition-colors">${escapeHtml(cat)}</span>
-        <span class="num text-[var(--muted)]">${fmt(amt)} <span class="mx-1 opacity-50">·</span> ${share}%</span>
+        <span class="text-white group-hover:text-[var(--accent)] transition-colors truncate pr-2">${escapeHtml(cat)}</span>
+        <span class="num text-[var(--muted)] shrink-0">${fmt(amt)} <span class="mx-1 opacity-50">·</span> ${share}%</span>
       </div>
       <div class="h-2 rounded-full bg-black/40 overflow-hidden border border-white/5 p-[1px]">
         <div class="h-full rounded-full relative overflow-hidden" style="width:${pct}%; background: linear-gradient(90deg, var(--accent), var(--accent-2))">
@@ -1174,25 +1085,20 @@ function renderMonthly() {
     </div>`;
   }).join('') || '<div class="text-xs font-medium text-[var(--muted)] text-center py-4">No expenses this month</div>';
 
-  // Daily spend line
   const [y, m] = current.split('-');
   const days = new Date(y, m, 0).getDate();
   const labels = [], data = [];
   for (let i = 1; i <= days; i++) {
-    labels.push(i);
-    data.push(dayMap[String(i).padStart(2, '0')] || 0);
+    labels.push(i); data.push(dayMap[String(i).padStart(2, '0')] || 0);
   }
   drawLine('chartDaily', labels, data);
 }
 
 /* ================== CHARTS ================== */
-function destroyChart(id) {
-  if (state.charts[id]) state.charts[id].destroy();
-}
+function destroyChart(id) { if (state.charts[id]) state.charts[id].destroy(); }
 function chartOpts(extra = {}) {
   return {
-    responsive: true,
-    maintainAspectRatio: false,
+    responsive: true, maintainAspectRatio: false,
     plugins: {
       legend: { labels: { color: '#8b92a5', font: { family: 'Inter', size: 11, weight: '500' }, usePointStyle: true, boxWidth: 8 } },
       tooltip: {
@@ -1235,8 +1141,7 @@ function drawDoughnut(id, labels, data) {
     type: 'doughnut',
     data: { labels, datasets: [{ data, backgroundColor: palette, borderWidth: 0, hoverOffset: 4 }] },
     options: {
-      cutout: '75%',
-      responsive: true, maintainAspectRatio: false,
+      cutout: '75%', responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { position: 'right', labels: { color: '#8b92a5', font: { family: 'Inter', size: 11, weight: '500' }, usePointStyle: true, boxWidth: 8 } },
         tooltip: {
@@ -1275,7 +1180,7 @@ function drawLine(id, labels, data) {
 function openTxModal(tx = null) {
   state.editingId = tx?.id || null;
   $('#txModalTitle').textContent = tx ? 'Edit Transaction' : 'Add Transaction';
-  $('#txDate').value = tx?.date || getLocalISODate(); // FIXED: Uses local timezone, not UTC
+  $('#txDate').value = tx?.date || getLocalISODate();
   $('#txType').value = tx?.type || 'income';
   $('#txCurrency').value = tx?.currency || 'INR';
   $('#txCategory').value = tx?.category || '';
@@ -1343,7 +1248,7 @@ document.addEventListener('click', (e) => {
   $$('.tabPanel').forEach(p => { p.classList.add('hidden'); p.classList.remove('grow-in'); });
   const panel = $('#tab-' + btn.dataset.tab);
   panel.classList.remove('hidden');
-  void panel.offsetWidth; // trigger reflow
+  void panel.offsetWidth;
   panel.classList.add('grow-in');
   if (btn.dataset.tab === 'tx') renderTxList();
   if (btn.dataset.tab === 'monthly') renderMonthly();
@@ -1388,7 +1293,7 @@ $('#refreshBtn').onclick = async () => {
   await Promise.all([fetchRates(), syncFromSheet(), fetchCrypto()]);
   renderAll();
   $('#refreshBtn').classList.remove('spin');
-  toast('Data Synced Successfully');
+  toast('Data Synced');
 };
 $('#txSearch').oninput = renderTxList;
 $('#txFilter').onchange = renderTxList;
@@ -1409,21 +1314,16 @@ function renderAll() {
 
 /* ================== INIT ================== */
 (async function init() {
-  // Set active currency pill
   $$('.curBtn').forEach(b => b.classList.toggle('tab-active', b.dataset.cur === state.displayCur));
-  // Setup modal no longer auto-opens — config is hardcoded
-  // (⚙️ button still works if you want to edit values temporarily on this device)
   await fetchRates();
   await syncFromSheet();
   renderAll();
-  fetchCrypto(); // async, updates when ready
-  // Refresh crypto + rates every 60s
+  fetchCrypto();
   setInterval(() => { fetchCrypto(); fetchRates(); }, 60000);
 })();
 </script>
 
 <script>
-  // Micro-animations for dynamic number changes without modifying original JS logic
   document.addEventListener('DOMContentLoaded', () => {
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
@@ -1431,7 +1331,7 @@ function renderAll() {
           const target = mutation.target.nodeType === 3 ? mutation.target.parentNode : mutation.target;
           if (target && target.classList && target.classList.contains('num') && target.textContent.trim() !== '—') {
             target.classList.remove('pop-anim');
-            void target.offsetWidth; // trigger reflow
+            void target.offsetWidth;
             target.classList.add('pop-anim');
           }
         }
