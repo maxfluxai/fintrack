@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <meta name="theme-color" content="#050505" />
-<title>FinTrack — Business + Crypto</title>
+<title>FinTrack MaxfluxAI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -69,6 +69,14 @@
     outline: none !important;
     border-color: var(--accent) !important;
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2), inset 0 1px 2px rgba(0,0,0,0.3) !important;
+  }
+
+  /* Date Picker Custom Trick for Mobile Native Menus */
+  input[type="date"] { position: relative; }
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer;
   }
 
   /* Buttons */
@@ -228,7 +236,7 @@
       <h2 class="text-xl font-bold tracking-tight" id="txModalTitle">Add Transaction</h2>
     </div>
     <div class="grid grid-cols-2 gap-4">
-      <div class="col-span-2">
+      <div class="col-span-2 relative">
         <label class="text-xs font-medium text-[var(--muted)] uppercase tracking-wider">Date</label>
         <input id="txDate" type="date" class="w-full rounded-lg p-2.5 mt-1 text-sm font-mono" />
       </div>
@@ -291,7 +299,7 @@
         <div class="absolute inset-0 bg-white/20 translate-y-[100%] hover:translate-y-0 transition-transform duration-300"></div>
       </div>
       <div class="flex flex-col justify-center">
-        <div class="font-bold text-sm tracking-tight" id="hdrName">FinTrack</div>
+        <div class="font-bold text-sm tracking-tight" id="hdrName">FinTrack MaxfluxAI</div>
         <div class="flex items-center gap-1.5 mt-0.5">
           <div class="live-dot"></div>
           <div class="text-[10px] text-[var(--muted)] num font-medium uppercase tracking-widest" id="hdrRate">loading rates…</div>
@@ -317,7 +325,7 @@
   <div class="max-w-7xl mx-auto px-4 pb-3">
     <div class="pill rounded-xl p-1 flex gap-1 text-xs overflow-x-auto font-medium scrollbar-hide border border-white/5 relative">
       <button data-tab="dash" class="tabBtn px-4 py-2.5 rounded-lg tab-active whitespace-nowrap flex items-center gap-2 group">
-        <svg class="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+        <svg class="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
         Dashboard
       </button>
       <button data-tab="tx" class="tabBtn px-4 py-2.5 rounded-lg whitespace-nowrap flex items-center gap-2 group">
@@ -566,6 +574,13 @@ const monthLabel = (k) => {
   const [y, m] = k.split('-');
   return new Date(y, m - 1).toLocaleString('en-US', { month: 'short', year: 'numeric' });
 };
+const cleanDate = (d) => {
+  if (!d) return '';
+  let s = String(d);
+  if (s.includes('T')) s = s.split('T')[0];
+  else if (s.includes(' ')) s = s.split(' ')[0];
+  return s;
+};
 
 /* ================== GOOGLE SHEETS SYNC ================== */
 async function syncFromSheet() {
@@ -576,7 +591,7 @@ async function syncFromSheet() {
     if (Array.isArray(data)) {
       state.txs = data.map((row, i) => ({
         id: row.id || ('r' + i),
-        date: row.date,
+        date: cleanDate(row.date),
         type: row.type,
         category: row.category || 'Other',
         description: row.description || '',
@@ -640,7 +655,6 @@ async function fetchRates() {
 /* ================== CRYPTO (Multi-chain: Solana + ETH + Polygon + Base + BTC) ================== */
 
 // Token lists for EVM chains — only the most liquid tokens are tracked to keep API calls free
-// Format: { symbol, coingeckoId, contract (lowercase), decimals }
 const EVM_TOKENS = {
   ethereum: [
     { symbol: 'USDC', id: 'usd-coin', contract: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', decimals: 6 },
@@ -892,7 +906,9 @@ async function fetchCrypto() {
     tokens: all,
     totalUsd,
   };
+  
   renderCrypto();
+  renderDashboard(); // Ensures the dashboard updates Net Worth immediately when crypto fetches
 }
 
 const CHAIN_LABELS = {
@@ -907,7 +923,7 @@ function renderCrypto() {
   const { tokens, totalUsd } = state.crypto;
   const totalDisp = state.displayCur === 'INR' ? totalUsd * state.rates.USD_INR : totalUsd;
   $('#cryptoTotal').textContent = fmt(totalDisp);
-  $('#statCrypto').textContent = fmt(totalDisp);
+  $('#statCrypto').textContent = fmt(totalDisp); // Also update here to catch tab switches
 
   // "SOL Balance" box repurposed: show top holding
   const sorted = [...tokens].sort((a, b) => (b.valueUsd || 0) - (a.valueUsd || 0));
@@ -954,9 +970,12 @@ function renderCrypto() {
   });
   $('#cryptoHoldings').innerHTML = html || '<div class="text-sm text-[var(--muted)] text-center py-4">No holdings detected</div>';
 
-  // Doughnut by chain
+  // Doughnut by chain (Fixed currency scale)
   const chainLabels = Object.keys(byChain).map(c => CHAIN_LABELS[c]?.name || c);
-  const chainValues = Object.values(byChain).map(hs => hs.reduce((s, h) => s + (h.valueUsd || 0), 0));
+  const chainValues = Object.values(byChain).map(hs => {
+    const usdVal = hs.reduce((s, h) => s + (h.valueUsd || 0), 0);
+    return state.displayCur === 'INR' ? usdVal * state.rates.USD_INR : usdVal;
+  });
   const chainColors = Object.keys(byChain).map(c => CHAIN_LABELS[c]?.color || '#888');
   drawDoughnutCustom('chartCrypto', chainLabels, chainValues, chainColors);
 }
@@ -994,9 +1013,13 @@ function renderDashboard() {
     }
   });
   const cash = income - expense;
+  
+  // FIXED: Ensure Dashboard Crypto value dynamically updates when currency is switched
   const cryptoDisp = state.displayCur === 'INR' ? state.crypto.totalUsd * state.rates.USD_INR : state.crypto.totalUsd;
   $('#statNetWorth').textContent = fmt(cash + cryptoDisp);
   $('#statCash').textContent = fmt(cash);
+  $('#statCrypto').textContent = fmt(cryptoDisp); // Updates correctly here now!
+  
   $('#statCashSub').innerHTML = `<span class="text-[var(--green)]">↑ ${fmt(income)}</span> <span class="mx-1 text-white/20">·</span> <span class="text-[var(--red)]">↓ ${fmt(expense)}</span>`;
   $('#statMonth').textContent = fmt(monthNet);
   $('#statMonth').style.color = monthNet >= 0 ? 'var(--green)' : 'var(--red)';
@@ -1227,7 +1250,7 @@ function openTxModal(tx = null) {
   state.editingId = tx?.id || null;
   $('#txModalTitle').textContent = tx ? 'Edit Transaction' : 'Add Transaction';
   $('#txDate').value = tx?.date || new Date().toISOString().slice(0, 10);
-  $('#txType').value = tx?.type || 'expense';
+  $('#txType').value = tx?.type || 'income';
   $('#txCurrency').value = tx?.currency || 'INR';
   $('#txCategory').value = tx?.category || '';
   $('#txDesc').value = tx?.description || '';
@@ -1350,7 +1373,7 @@ function escapeHtml(s) {
 }
 
 function renderAll() {
-  $('#hdrName').textContent = state.cfg.name || 'FinTrack';
+  $('#hdrName').textContent = state.cfg.name || 'FinTrack MaxfluxAI';
   renderDashboard();
   const activeTab = document.querySelector('.tabBtn.tab-active')?.dataset.tab;
   if (activeTab === 'tx') renderTxList();
