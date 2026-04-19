@@ -325,8 +325,17 @@
 
 <script>
 /* ================== STATE ================== */
+// Hardcoded config — edit these values if wallets or Apps Script URL change
+const HARDCODED_CFG = {
+  sheetUrl: 'https://script.google.com/macros/s/AKfycbwvZDXkrMbGHAytF5u539V87Cm8H54_dQ84CBrEwpgVU9f8XivHapAL2zNtKZYPtObKqQ/exec',
+  walletSol: '4dzFHSuoCaf6pADokrSniNMde5FwCAU88wpgjJqFbFRX',
+  walletEvm: '0xC2f00D6aac0f45313Ee61bC63443d9b31172e225',
+  walletBtc: 'bc1ql2dd5pkfp84lqrsfgyg7r03quc8cvs5vnuvzzu',
+  name: 'Lakshya',
+};
+
 const state = {
-  cfg: JSON.parse(localStorage.getItem('fintrack_cfg') || '{}'),
+  cfg: HARDCODED_CFG,
   txs: JSON.parse(localStorage.getItem('fintrack_cache') || '[]'),
   rates: { USD_INR: 83.5, INR_USD: 1/83.5 }, // fallback
   crypto: { sol: 0, tokens: [], totalUsd: 0 },
@@ -461,9 +470,22 @@ const EVM_TOKENS = {
 };
 
 const EVM_RPC = {
-  ethereum: 'https://eth.llamarpc.com',
-  polygon: 'https://polygon-rpc.com',
-  base: 'https://mainnet.base.org',
+  ethereum: [
+    'https://ethereum-rpc.publicnode.com',
+    'https://eth.llamarpc.com',
+    'https://rpc.ankr.com/eth',
+    'https://cloudflare-eth.com',
+  ],
+  polygon: [
+    'https://polygon-bor-rpc.publicnode.com',
+    'https://polygon-rpc.com',
+    'https://rpc.ankr.com/polygon',
+  ],
+  base: [
+    'https://base-rpc.publicnode.com',
+    'https://mainnet.base.org',
+    'https://base.llamarpc.com',
+  ],
 };
 const EVM_NATIVE = {
   ethereum: { symbol: 'ETH', id: 'ethereum' },
@@ -471,39 +493,70 @@ const EVM_NATIVE = {
   base: { symbol: 'ETH', id: 'ethereum' },
 };
 
-async function rpcCall(url, method, params) {
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-  });
-  const d = await r.json();
-  return d.result;
+async function rpcCall(urlOrList, method, params) {
+  const urls = Array.isArray(urlOrList) ? urlOrList : [urlOrList];
+  let lastErr;
+  for (const url of urls) {
+    try {
+      const ctrl = new AbortController();
+      const timeout = setTimeout(() => ctrl.abort(), 7000);
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+        signal: ctrl.signal,
+      });
+      clearTimeout(timeout);
+      if (!r.ok) { lastErr = new Error('HTTP ' + r.status); continue; }
+      const d = await r.json();
+      if (d.error) { lastErr = new Error(d.error.message || 'rpc error'); continue; }
+      return d.result;
+    } catch (e) {
+      lastErr = e;
+      continue;
+    }
+  }
+  throw lastErr || new Error('all RPCs failed');
 }
 
 // ERC-20 balanceOf(address) -> returns hex balance
-async function evmTokenBalance(rpc, wallet, contract) {
+async function evmTokenBalance(rpcList, wallet, contract) {
   const data = '0x70a08231' + '000000000000000000000000' + wallet.slice(2).toLowerCase();
-  const res = await rpcCall(rpc, 'eth_call', [{ to: contract, data }, 'latest']);
-  return res ? parseInt(res, 16) : 0;
+  try {
+    const res = await rpcCall(rpcList, 'eth_call', [{ to: contract, data }, 'latest']);
+    if (!res || res === '0x') return 0n;
+    return BigInt(res);
+  } catch (e) {
+    return 0n;
+  }
+}
+
+function bigIntToFloat(bi, decimals) {
+  const divisor = 10n ** BigInt(decimals);
+  const whole = bi / divisor;
+  const frac = bi % divisor;
+  return Number(whole) + Number(frac) / Number(divisor);
 }
 
 async function fetchEvmChain(chain, wallet) {
-  const rpc = EVM_RPC[chain];
+  const rpcList = EVM_RPC[chain];
   const native = EVM_NATIVE[chain];
   const results = [];
   try {
-    const balHex = await rpcCall(rpc, 'eth_getBalance', [wallet, 'latest']);
-    const nativeAmt = parseInt(balHex, 16) / 1e18;
+    const balHex = await rpcCall(rpcList, 'eth_getBalance', [wallet, 'latest']);
+    const nativeWei = balHex && balHex !== '0x' ? BigInt(balHex) : 0n;
+    const nativeAmt = bigIntToFloat(nativeWei, 18);
     if (nativeAmt > 0) {
       results.push({ chain, symbol: native.symbol, coingeckoId: native.id, amount: nativeAmt });
     }
-    // Fetch token balances in parallel
+    // Fetch token balances in parallel, each can fail independently
     const tokens = EVM_TOKENS[chain] || [];
-    const balances = await Promise.all(tokens.map(t => evmTokenBalance(rpc, wallet, t.contract).catch(() => 0)));
+    const balances = await Promise.all(tokens.map(t => evmTokenBalance(rpcList, wallet, t.contract)));
     tokens.forEach((t, i) => {
-      const amt = balances[i] / Math.pow(10, t.decimals);
-      if (amt > 0.001) results.push({ chain, symbol: t.symbol, coingeckoId: t.id, amount: amt });
+      const raw = balances[i]; // BigInt
+      if (raw === 0n) return;
+      const amt = bigIntToFloat(raw, t.decimals);
+      if (amt > 0) results.push({ chain, symbol: t.symbol, coingeckoId: t.id, amount: amt });
     });
   } catch (e) {
     console.warn(chain + ' fetch failed', e);
@@ -512,7 +565,11 @@ async function fetchEvmChain(chain, wallet) {
 }
 
 async function fetchSolana(wallet) {
-  const rpc = 'https://api.mainnet-beta.solana.com';
+  const rpc = [
+    'https://api.mainnet-beta.solana.com',
+    'https://solana-rpc.publicnode.com',
+    'https://solana.drpc.org',
+  ];
   const results = [];
   try {
     const balRes = await rpcCall(rpc, 'getBalance', [wallet]);
@@ -591,15 +648,18 @@ async function fetchCrypto() {
 
   // Fetch all chains in parallel
   const tasks = [];
-  if (cfg.walletSol) tasks.push(fetchSolana(cfg.walletSol));
+  const taskNames = [];
+  if (cfg.walletSol) { tasks.push(fetchSolana(cfg.walletSol)); taskNames.push('solana'); }
   if (cfg.walletEvm) {
-    tasks.push(fetchEvmChain('ethereum', cfg.walletEvm));
-    tasks.push(fetchEvmChain('polygon', cfg.walletEvm));
-    tasks.push(fetchEvmChain('base', cfg.walletEvm));
+    tasks.push(fetchEvmChain('ethereum', cfg.walletEvm)); taskNames.push('ethereum');
+    tasks.push(fetchEvmChain('polygon', cfg.walletEvm)); taskNames.push('polygon');
+    tasks.push(fetchEvmChain('base', cfg.walletEvm)); taskNames.push('base');
   }
-  if (cfg.walletBtc) tasks.push(fetchBitcoin(cfg.walletBtc));
+  if (cfg.walletBtc) { tasks.push(fetchBitcoin(cfg.walletBtc)); taskNames.push('bitcoin'); }
 
-  const all = (await Promise.all(tasks)).flat();
+  const chainResults = await Promise.all(tasks);
+  chainResults.forEach((r, i) => console.log(`[FinTrack] ${taskNames[i]}:`, r));
+  const all = chainResults.flat();
 
   // Batch-fetch CoinGecko prices for everything that needs one
   const idsToFetch = [...new Set(all.filter(h => h.coingeckoId && !h.isPriced).map(h => h.coingeckoId))];
@@ -1070,9 +1130,8 @@ function renderAll() {
 (async function init() {
   // Set active currency pill
   $$('.curBtn').forEach(b => b.classList.toggle('tab-active', b.dataset.cur === state.displayCur));
-  if (!state.cfg.sheetUrl && !state.cfg.walletSol && !state.cfg.walletEvm && !state.cfg.walletBtc) {
-    $('#setupModal').classList.remove('hidden');
-  }
+  // Setup modal no longer auto-opens — config is hardcoded
+  // (⚙️ button still works if you want to edit values temporarily on this device)
   await fetchRates();
   await syncFromSheet();
   renderAll();
